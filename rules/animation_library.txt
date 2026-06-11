@@ -1,0 +1,50 @@
+ZOOM_HOOK
+  When: Always, first 0.3 seconds — NON-NEGOTIABLE
+  Params: snap_frames (6), hold_frames (6), ease_frames (20), peak_scale (1.18), settle_scale (1.08)
+  Total: 32 frames — snap → hold → ease back
+
+TITLE_CARD
+  When: Frame 0, simultaneous with hook snap
+  Params: text, subtitle, animation (slam_up)
+  Duration: minimum 120 frames (4 seconds at 30fps)
+  Style: heaviest weight, 80% screen width, all caps
+
+CAPTION_HIGHLIGHT
+  When: Full video duration
+  Params: auto (true) — driven by word timestamps
+
+STAT_CALLOUT
+  When: Exact frame a stat number is spoken
+  Params: number, label, position (left/right)
+
+STEP_REVEAL
+  When: Exact frame creator says One/Two/Three
+  Params: step_number, text
+
+WORD_HIGHLIGHT
+  When: Energy words — Right, Unless, That's all
+  Params: word, color (cyan), style (flash)
+
+BROLL_OVERLAY (stock video — auto-detected)
+  When: Keyword matches broll_detector types (data_flow, terminal, salary, etc.)
+  Pipeline fetches portrait stock clips from Pexels (primary) / Pixabay (fallback)
+  Rate limit: max 1 B-roll per 8 seconds of video
+  Remotion: StockVideoBroll with SVG fallback if clip missing
+  Params: type, start_frame, end_frame, search_query, clip_file
+
+ZOOM_CLOSER
+  When: Final 3 seconds
+  Params: start_scale (1.08), end_scale (1.12)
+
+ROLE_CAST (auto-detected — reaction characters)
+  Pipeline: role_caster.py → role_moments.json → RoleRouter.tsx
+  Cast: victim (pain/fail), hype (wins), skeptic (doubt), expert (tech), gremlin (chaos)
+  Each role: SVG character + comic speech bubble + pose animation + callback support
+  mood medium: 1 role per 8s | chaos: 1 per 5s + gremlin + manga lines
+
+FUN_MOMENTS (atmosphere FX only — mood: medium | chaos)
+  Pipeline: fun_detector.py → fun_moments.json → FunRouter.tsx
+  medium mood: comic_sfx, emoji_pop, speech_bubble, doodle_arrow, confetti, mind_blown, red_x, question_bounce (max 1 per 8s)
+  chaos mood: all medium types + money_rain, fire_spark, manga_lines (max 1 per 5s)
+  SVG: ComicSFX, EmojiPop, DoodleArrow, SpeechBubble, RedXSlam, QuestionBounce, MangaLines
+  Lottie: confetti, money_rain, fire_spark, mind_blown in public/lottie/fun/

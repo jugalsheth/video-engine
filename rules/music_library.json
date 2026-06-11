@@ -1,0 +1,37 @@
+{
+  "tracks": {
+    "calm": {
+      "file": "calm_lofi.mp3",
+      "label": "Calm lo-fi",
+      "pixabay_queries": ["lofi ambient", "chill hip hop instrumental"],
+      "volume_speaking": 0.03,
+      "volume_idle": 0.065
+    },
+    "mid": {
+      "file": "mid_beat.mp3",
+      "label": "Mid energy beat",
+      "pixabay_queries": ["motivational beat instrumental", "corporate upbeat no vocals"],
+      "volume_speaking": 0.028,
+      "volume_idle": 0.075
+    },
+    "hype": {
+      "file": "hype_energy.mp3",
+      "label": "High energy phonk",
+      "pixabay_queries": ["phonk instrumental", "trap beat no vocals"],
+      "volume_speaking": 0.025,
+      "volume_idle": 0.08
+    }
+  },
+  "template_map": {
+    "THREE_STEP_HOT_TAKE": "mid",
+    "CONFESSION_STAT": "hype"
+  },
+  "hook_type_map": {
+    "CONTRARIAN STRIKE": "hype",
+    "CONFESSION": "hype",
+    "IDENTITY CALL": "mid",
+    "OPEN LOOP": "calm"
+  },
+  "default": "calm",
+  "legacy_file": "background.mp3"
+}

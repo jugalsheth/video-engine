@@ -1,0 +1,26 @@
+{
+  "name": "video-engine-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "render": "remotion render src/index.ts VideoComposition"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.286",
+    "@remotion/google-fonts": "^4.0.475",
+    "@remotion/lottie": "^4.0.475",
+    "@remotion/media": "^4.0.286",
+    "@remotion/zod-types": "^4.0.286",
+    "lottie-web": "^5.13.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.286",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

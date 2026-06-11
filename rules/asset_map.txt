@@ -1,0 +1,9 @@
+linkedin → linkedin_screenshot.png
+salary → salary_chart.png
+phone → phone_with_app.png
+github → github_profile.png
+code → coding_terminal.png
+terminal → coding_terminal.png
+resume → linkedin_screenshot.png
+recruiter → linkedin_screenshot.png
+profile → linkedin_screenshot.png

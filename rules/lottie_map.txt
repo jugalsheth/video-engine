@@ -1,0 +1,18 @@
+# Lottie files in remotion/public/ — pipeline picks first valid file per type
+# Download from LottieFiles (Free license) as .json
+
+## Fun moments (fun_detector → LottieFun, full-screen corner)
+confetti      → lottie/fun/confetti.json
+money_rain    → lottie/fun/money_rain.json
+fire_spark    → lottie/fun/fire_burst.json (fallback: fire_spark.json)
+mind_blown    → lottie/fun/mind_blown.json
+checkmark_pop → lottie/fun/checkmark_pop.json
+
+## Stat callouts (StatCallout accent, behind number)
+sparkle_burst → lottie/fun/sparkle_burst.json (fallback: datapulse, chart_growth)
+
+## Triggers (automatic from transcript)
+confetti   — finally, done, success, works
+money_rain — salary, paid, income (chaos mood)
+fire_spark — fire, viral, trending (chaos mood)
+mind_blown — secret, hack, trick

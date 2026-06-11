@@ -1,0 +1,56 @@
+{
+  "mood": "medium",
+  "moments": [
+    {
+      "role": "expert",
+      "pose": "point",
+      "line": "CLASSIC PIPELINE",
+      "start_frame": 846,
+      "end_frame": 921,
+      "keyword": "data pipeline",
+      "mood": "medium",
+      "side": "left",
+      "is_callback": false
+    },
+    {
+      "role": "victim",
+      "pose": "melting",
+      "line": "OUCH",
+      "start_frame": 1142,
+      "end_frame": 1217,
+      "keyword": "wrong",
+      "mood": "medium",
+      "side": "right",
+      "is_callback": false
+    },
+    {
+      "role": "hype",
+      "pose": "celebrate",
+      "line": "IT WORKS!",
+      "start_frame": 1486,
+      "end_frame": 1561,
+      "keyword": "works",
+      "mood": "medium",
+      "side": "left",
+      "is_callback": false
+    }
+  ],
+  "skipped": [
+    {
+      "role": "hype",
+      "start_frame": 28,
+      "keyword": "finally",
+      "reason": "title conflict"
+    }
+  ],
+  "summary": {
+    "detected": 3,
+    "skipped": 1,
+    "mood": "medium",
+    "roles": [
+      "expert",
+      "victim",
+      "hype"
+    ]
+  }
+}

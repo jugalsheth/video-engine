@@ -1,0 +1,12 @@
+# Role → trigger keywords (phrase-first). mood: medium | chaos
+# victim: pain, failure, late nights
+# hype: wins, saves, success
+# skeptic: doubt, hedging
+# expert: technical explainers
+# gremlin: chaos energy (chaos mood only)
+
+victim → broke, failure, fail, 3 am, tired, inevitable, wrong, error, pain, window
+hype → finally, works, saved, success, landed, nailed, hours saved, win
+skeptic → at least, really, unless, but, wonder, normal, sure
+expert → pipeline, data, system, python, code, transform, engineering, warehouse
+gremlin → insane, wild, crazy, literally, chaos, boom

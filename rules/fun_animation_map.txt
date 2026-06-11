@@ -1,0 +1,14 @@
+# Fun moment type → trigger keywords/phrases (phrase-first in detector)
+# mood: medium | chaos | both
+
+comic_sfx → boom, pow, bam, slam, huge, massive
+emoji_pop → crazy, insane, wild, fire, wow, literally
+speech_bubble → truth, fact, secret is, here's the
+doodle_arrow → look at, right here, this is, over here
+confetti → finally, done, landed, success, nailed it
+mind_blown → secret, hack, trick, mind blown, plot twist
+red_x → wrong, mistake, fail, failed, broken, error
+question_bounce → really, why, how, what if
+money_rain → money, salary, paid, income, revenue
+fire_spark → fire, hot, trending, viral
+manga_lines → insane, wild, energy, let's go, boom

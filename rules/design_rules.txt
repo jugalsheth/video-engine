@@ -1,0 +1,77 @@
+ANIMATION PHILOSOPHY (read this before every decision):
+Subtle is the enemy. This content competes with thousands of videos.
+Every animation choice should feel intentional and slightly aggressive.
+The viewer's thumb is moving. You have 0.3 seconds to stop it.
+If an animation could be described as "gentle" — make it stronger.
+If a callout could be described as "clean" — make it bolder.
+The brand is dark, editorial, and confident — not soft or corporate.
+Energy without chaos. Bold without overwhelming.
+
+BRAND IDENTITY:
+Background: Always dark (#0C0B09 obsidian)
+Primary accent: Cyan (#00D4FF) for emphasis and captions
+Secondary accent: Amber (#C9923A) for stats and numbers
+Title font: Bold sans-serif, heaviest weight, all caps
+Caption font: Clean sans-serif, minimum 36px
+Never use: white backgrounds, rounded cards, bright colors
+Never cover the creator's face with any graphic element
+
+HOOK ANIMATION (first 0.3 seconds — non-negotiable):
+Snap zoom: scale 1.0 → 1.18 in exactly 6 frames (aggressive, sharp)
+Hold zoom at 1.18 for 6 frames
+Ease back to 1.08 over 20 frames
+This is the single most important retention moment in the video
+Do NOT make this subtle — it must be jarring enough to interrupt scrolling
+
+TITLE CARD (simultaneous with hook snap):
+Title text: SLAM in from bottom, not drop from top
+Title appears simultaneously with zoom snap (frame 0)
+Font weight: heaviest possible, all caps, fills 80% of screen width
+Title stays for minimum 4 seconds (120 frames at 30fps)
+Subtitle: cyan, bold, appears with title
+
+CAPTION STYLE (VIRAL / HORMOZI MODE — default):
+Always on — never off
+Max 2 words on screen at once — never more
+All caps, font weight 900, 52px minimum
+Active word: amber highlight (#C9923A), scale 1.15 spring
+Inactive word: #F5F0E8 at 85% opacity
+Heavy black text shadow for readability — no background strip in viral mode
+Position: 75% from top (above nav, below chin)
+SFX: subtle tick on energy words
+
+STAT CALLOUTS:
+Trigger: exact frame when stat number is spoken
+Animation: count-up from 0 over 30 frames (fast, punchy)
+Color: amber (#C9923A) for number, white for label
+Size: large — scroll-stopping, never timid
+Position: right side, never covering face
+Hold visible: minimum 3 seconds after count-up
+
+STEP REVEALS:
+Always sequential — never simultaneous
+Each step: hard slide from left with spring overshoot
+Step number: cyan circle with white number, bold
+Previous steps stay visible when next appears
+Trigger: exact frame creator says One/Two/Three
+
+B-ROLL OVERLAYS:
+Duration: 2-3 seconds max
+Position: top right corner, 28% frame width max
+Animation: fast fade in and fade out
+Never during stat or step moments
+
+CLOSER (final 3 seconds):
+Zoom in: 1.08 to 1.12
+Captions slightly larger
+No additional graphics — quiet and human
+
+ENERGY WORDS (Right, Unless, That's all, Listen):
+Sharp cyan flash on the word in captions — visible, not subtle
+
+NEVER:
+More than 2 graphic elements simultaneously
+Any overlay covering the creator's face
+Rounded pill badges or card backgrounds
+Cheerful or bright color schemes
+Gentle, soft, or corporate-feeling animations

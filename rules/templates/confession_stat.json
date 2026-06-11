@@ -1,0 +1,18 @@
+{
+  "id": "CONFESSION_STAT",
+  "label": "Confession → Stat slap → 3 fixes",
+  "duration_target_s": [45, 55],
+  "hook_types": ["CONFESSION", "CONTRARIAN STRIKE"],
+  "slots": [
+    {"name": "hook", "start_s": 0, "end_s": 3, "required": ["ZOOM_HOOK", "TITLE_CARD"]},
+    {"name": "crust", "start_s": 3, "end_s": 8, "required": ["crust_beat", "STAT_CALLOUT"]},
+    {"name": "body_1", "start_s": 8, "end_s": 22, "required": ["visual_change", "fun_fx"]},
+    {"name": "body_2", "start_s": 22, "end_s": 35, "required": ["STEP_REVEAL", "broll"]},
+    {"name": "payoff", "start_s": 35, "end_s": 55, "required": ["ZOOM_CLOSER", "payoff_glow"]}
+  ],
+  "visual_change_max_gap_s": 4,
+  "min_visual_events": 10,
+  "title_card_frames": 36,
+  "stat_hold_frames": 75,
+  "step_hold_frames": 75
+}

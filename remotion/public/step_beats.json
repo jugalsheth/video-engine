@@ -1,0 +1,31 @@
+{
+  "beats": [
+    {
+      "step": 1,
+      "frame": 272,
+      "label": "SHOWCASE DELIVERY",
+      "source": "visual_moments"
+    },
+    {
+      "step": 2,
+      "frame": 655,
+      "label": "LEARN ACROSS STACK",
+      "source": "visual_moments"
+    },
+    {
+      "step": 3,
+      "frame": 1035,
+      "label": "DOCUMENT IMPACT",
+      "source": "visual_moments"
+    }
+  ],
+  "summary": {
+    "count": 3,
+    "steps": [
+      1,
+      2,
+      3
+    ],
+    "source": "visual_moments"
+  }
+}

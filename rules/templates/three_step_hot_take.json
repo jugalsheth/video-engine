@@ -1,0 +1,19 @@
+{
+  "id": "THREE_STEP_HOT_TAKE",
+  "label": "Hook → 3 Steps → Payoff",
+  "duration_target_s": [45, 55],
+  "hook_types": ["OPEN LOOP", "IDENTITY CALL", "CONTRARIAN STRIKE"],
+  "slots": [
+    {"name": "hook", "start_s": 0, "end_s": 3, "required": ["ZOOM_HOOK", "TITLE_CARD"]},
+    {"name": "crust", "start_s": 3, "end_s": 8, "required": ["crust_beat", "fun_fx"]},
+    {"name": "step_1", "start_s": 8, "end_s": 20, "required": ["STEP_REVEAL", "visual_change"]},
+    {"name": "step_2", "start_s": 20, "end_s": 32, "required": ["STEP_REVEAL", "stat_or_broll"]},
+    {"name": "step_3", "start_s": 32, "end_s": 42, "required": ["STEP_REVEAL", "fun_fx"]},
+    {"name": "payoff", "start_s": 42, "end_s": 55, "required": ["ZOOM_CLOSER", "payoff_glow"]}
+  ],
+  "visual_change_max_gap_s": 4,
+  "min_visual_events": 12,
+  "title_card_frames": 120,
+  "stat_hold_frames": 75,
+  "step_hold_frames": 75
+}

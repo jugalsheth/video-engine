@@ -1,0 +1,19 @@
+# brand_id → logo file in remotion/public/logos/ | whisper aliases (comma-separated)
+# Matched against normalized transcript tokens and phrases.
+
+meta → meta.svg | meta
+anthropic → anthropic.svg | claude, anthropic, clawed, anthropik
+cursor → cursor.svg | cursor, cursors, cursor for coding
+openai → openai.svg | openai, open ai, chatgpt, gpt
+langchain → langchain.svg | langchain, lang chain, blank chain
+llamaindex → llamaindex.svg | llamaindex, llama index, alarm and index
+github → github.svg | github, git hub
+githubcopilot → githubcopilot.svg | copilot, co pilot, gethub copilot, get up copilot, github copilot
+amazonaws → amazonaws.svg | aws, amazon web services
+google → google.svg | google, alphabet
+snowflake → snowflake.svg | snowflake
+apachekafka → apachekafka.svg | kafka, apache kafka
+databricks → databricks.svg | databricks
+docker → docker.svg | docker, dockerfile
+kubernetes → kubernetes.svg | kubernetes, k8s
+linkedin → linkedin.svg | linkedin, linked in
