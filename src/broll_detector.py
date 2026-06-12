@@ -8,7 +8,7 @@ from src.frame_utils import frame_for_char_index, frame_for_phrase, normalize
 
 BROLL_DURATION_FRAMES = 75
 STAGGER_FRAMES = 10
-RATE_LIMIT_FRAMES = 240  # max 1 B-roll per 8 seconds at 30fps
+RATE_LIMIT_FRAMES = 150  # max 1 B-roll per 5 seconds at 30fps
 
 GREENSCREEN_TYPES = {"data_flow", "terminal", "linkedin", "salary", "growth_chart"}
 

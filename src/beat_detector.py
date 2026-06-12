@@ -165,6 +165,23 @@ def detect(transcript: dict, script: dict | None = None) -> dict:
         triggers = script.get("video_triggers") or {}
         beat_phrases = triggers.get("beat_phrases") or {}
         crust_phrase = beat_phrases.get("crust") or beat_phrases.get("energy")
+
+        # recording_cues with crust phrase override beat_phrases timing
+        for cue in script.get("recording_cues") or []:
+            phrase = cue.get("phrase")
+            action = (cue.get("action") or "").upper()
+            if not phrase or ("CRUST" not in action and "ENERGY UP" not in action):
+                continue
+            crust_frame = frame_for_phrase(
+                words, transcript.get("full_text", ""), phrase
+            )
+            if crust_frame is not None and crust_frame <= max_crust_frame:
+                crust_start = crust_frame
+                hook_end = max(0, crust_frame - int(0.35 * fps))
+                pause_frames = int(0.15 * fps)
+                crust_phrase = None  # already handled via cue
+                break
+
         if crust_phrase:
             crust_frame = frame_for_phrase(
                 words, transcript.get("full_text", ""), crust_phrase

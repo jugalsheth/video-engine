@@ -11,7 +11,7 @@ from src.rules_loader import load_fun_groups
 FUN_DURATION_FRAMES = 42  # 1.4s — snappy CapCut-style
 RATE_LIMIT_MEDIUM = 54  # 1.8s at 30fps
 RATE_LIMIT_CHAOS = 42  # 1.4s
-MAX_FUN_MOMENTS = 7
+MAX_FUN_MOMENTS = 10
 MIN_KEYWORD_LEN = 5  # skip weak single-word hits like "how"
 WEAK_TYPES = {"speech_bubble"}
 PREFERRED_TYPES = {"comic_sfx", "manga_lines", "red_x", "fire_spark", "emoji_pop", "mind_blown"}

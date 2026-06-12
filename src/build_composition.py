@@ -9,8 +9,10 @@ import shutil
 from pathlib import Path
 
 from src import beat_detector, broll_detector, fetch_broll, fetch_music, fun_detector, logo_detector, lottie_assets, role_caster, step_beat_detector
+from src.render_props import resolve_render_props
 from src.template_loader import resolve_template
-from src.visual_scheduler import apply_template_to_shots, fill_fun_gaps
+from src.trigger_audit import preferred_pause_seconds
+from src.visual_scheduler import apply_template_to_shots, fill_fun_gaps, enforce_min_visual_events
 from src.caption_converter import save_srt
 from src.cut_and_remap import apply_jump_cuts
 from src.detect_silence import detect as detect_silence
@@ -63,6 +65,9 @@ def prepare(
     broll_result = broll_detector.detect(transcript, enriched_shot_list, script)
     fun_result = fun_detector.detect(transcript, enriched_shot_list, script)
     fun_result = fill_fun_gaps(transcript, enriched_shot_list, fun_result, broll_result, template)
+    fun_result = enforce_min_visual_events(
+        transcript, enriched_shot_list, fun_result, broll_result, template,
+    )
     logo_result = logo_detector.detect(transcript, enriched_shot_list, script)
     role_result = role_caster.detect(transcript, enriched_shot_list)
     beats_result = beat_detector.detect(transcript, script)
@@ -70,7 +75,8 @@ def prepare(
     used_cut = False
     if jump_cuts_enabled():
         try:
-            silence_map = detect_silence(video_path)
+            pause_hints = preferred_pause_seconds(script)
+            silence_map = detect_silence(video_path, preferred_pause_seconds=pause_hints or None)
             (PUBLIC_DIR / "silence_map.json").write_text(json.dumps(silence_map, indent=2))
             if silence_map.get("removed_total_s", 0) >= 0.1:
                 transcript, enriched_shot_list, broll_result, fun_result, logo_result, role_result, beats_result, _ = (
@@ -140,6 +146,9 @@ def prepare(
     step_beats_path = PUBLIC_DIR / "step_beats.json"
     step_beats_result = step_beat_detector.detect(transcript, enriched_shot_list)
 
+    render_props = resolve_render_props(script, brand_config)
+    (PUBLIC_DIR / "render_props.json").write_text(json.dumps(render_props, indent=2))
+
     transcript_path.write_text(json.dumps(transcript, indent=2))
     save_srt(transcript, PUBLIC_DIR / "captions.srt")
     shot_list_path.write_text(json.dumps(enriched_shot_list, indent=2))
@@ -190,7 +199,14 @@ def prepare(
         "estimated_render_mins": est_render_mins,
     }
 
-    print("   Staged: source.mp4, transcript.json, shot_list.json, broll_moments.json, fun_moments.json, logo_moments.json, role_moments.json, step_beats.json, video_beats.json")
+    if script:
+        from src import trigger_audit
+        audit_result = trigger_audit.audit(transcript, script)
+        (PUBLIC_DIR / "trigger_audit.json").write_text(json.dumps(audit_result, indent=2))
+        summary["trigger_audit_passed"] = audit_result.get("passed")
+        summary["trigger_match_rate"] = audit_result.get("match_rate")
+
+    print("   Staged: source.mp4, transcript.json, shot_list.json, broll_moments.json, fun_moments.json, logo_moments.json, role_moments.json, step_beats.json, video_beats.json, render_props.json")
     print(
         f"   Shots: {summary['shots_placed']} | "
         f"B-roll: {summary['broll_detected']} detected, {summary['broll_skipped']} skipped | "

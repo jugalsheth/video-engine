@@ -56,9 +56,10 @@ const ShotLayer: React.FC<{
   props: VideoProps;
   closerStartFrame?: number;
   payoffFrame?: number;
+  plantFrame?: number;
   wordHighlightFrames?: Set<number>;
   stepBeats?: VideoProps['stepBeats']['beats'];
-}> = ({shot, props, closerStartFrame, payoffFrame, wordHighlightFrames, stepBeats = []}) => {
+}> = ({shot, props, closerStartFrame, payoffFrame, plantFrame, wordHighlightFrames, stepBeats = []}) => {
   const params = shot.params;
   switch (shot.type) {
     case 'TITLE_CARD':
@@ -78,8 +79,10 @@ const ShotLayer: React.FC<{
           captionStyle={props.captionStyle}
           closerStartFrame={closerStartFrame}
           openLoopPayoffFrame={payoffFrame}
+          openLoopPlantFrame={plantFrame}
           wordHighlightFrames={wordHighlightFrames}
           stepBeats={stepBeats}
+          energyWords={props.energyWords}
         />
       );
     case 'STAT_CALLOUT':
@@ -122,6 +125,11 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
   const payoffFrame = findPayoffFrame(
     transcript,
     shotList.script_metadata?.open_loop_payoff,
+  );
+
+  const plantFrame = findPayoffFrame(
+    transcript,
+    shotList.script_metadata?.open_loop_plant,
   );
 
   const wordHighlightFrames = useMemo(() => {
@@ -235,6 +243,7 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
               props={props}
               closerStartFrame={closerStartFrame}
               payoffFrame={payoffFrame}
+              plantFrame={plantFrame}
               wordHighlightFrames={wordHighlightFrames}
               stepBeats={stepBeatList}
             />
@@ -306,6 +315,7 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         crustStartFrame={videoBeats?.crust_start}
         captionStyle={props.captionStyle}
         music={shotList.script_metadata?.music}
+        energyWords={props.energyWords}
       />
     </AbsoluteFill>
     </OverlayScaleContext.Provider>

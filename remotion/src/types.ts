@@ -166,6 +166,7 @@ export type VideoProps = {
   zoomIntensity: number;
   graphicsScale: number;
   statCalloutSide: 'left' | 'right';
+  energyWords?: string[];
   transcript: Transcript;
   shotList: ShotList;
   brollMoments: BrollData;

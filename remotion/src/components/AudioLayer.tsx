@@ -18,6 +18,7 @@ type Props = {
   crustStartFrame?: number;
   captionStyle?: 'viral' | 'classic';
   music?: MusicConfig;
+  energyWords?: string[];
 };
 
 const musicFile = (file?: string) =>
@@ -52,6 +53,7 @@ export const AudioLayer: React.FC<Props> = ({
   crustStartFrame,
   captionStyle = 'viral',
   music,
+  energyWords = [],
 }) => {
   const {fps} = useVideoConfig();
 
@@ -70,6 +72,7 @@ export const AudioLayer: React.FC<Props> = ({
     const energy = new Set([
       'right', 'unless', 'listen', "that's", 'wait', 'but', 'now', 'truth',
       'secret', 'wild', 'finally', 'wrong',
+      ...energyWords.map((w) => w.toLowerCase().replace(/[^a-z']/g, '')),
     ]);
     const frames: number[] = [];
     let last = -45;
@@ -81,7 +84,7 @@ export const AudioLayer: React.FC<Props> = ({
       last = w.start_frame;
     }
     return frames;
-  }, [transcript.words, captionStyle]);
+  }, [transcript.words, captionStyle, energyWords]);
 
   return (
     <>

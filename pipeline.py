@@ -67,6 +67,11 @@ def run(video_path: str):
         print("📝 Aligning captions to script...")
         transcript = caption_aligner.align(transcript, script)
 
+        from src import trigger_audit
+        audit_result = trigger_audit.audit(transcript, script)
+        if not audit_result.get("passed"):
+            print("   ⚠️ Trigger audit below 90% — overlays may be sparse")
+
     print("🎨 Building shot list...")
     try:
         if script:

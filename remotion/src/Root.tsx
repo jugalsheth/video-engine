@@ -6,11 +6,12 @@ import type {BrollData, FunData, LogoData, RoleData, ShotList, StepBeatData, Tra
 
 export const videoSchema = z.object({
   titleVerticalPosition: z.number().default(15),
-  captionVerticalPosition: z.number().default(52),
+  captionVerticalPosition: z.number().default(75),
   captionStyle: z.enum(['viral', 'classic']).default('viral'),
-  zoomIntensity: z.number().default(1.18),
-  graphicsScale: z.number().min(0.8).max(2.2).default(1.65),
+  zoomIntensity: z.number().default(1.2),
+  graphicsScale: z.number().min(0.8).max(2.2).default(1.8),
   statCalloutSide: z.enum(['left', 'right']).default('right'),
+  energyWords: z.array(z.string()).optional(),
 });
 
 const emptyTranscript: Transcript = {
@@ -74,11 +75,12 @@ const defaultBeats: VideoBeats = {
 
 const defaultProps: VideoProps = {
   titleVerticalPosition: 15,
-  captionVerticalPosition: 52,
+  captionVerticalPosition: 75,
   captionStyle: 'viral',
-  zoomIntensity: 1.18,
-  graphicsScale: 1.65,
+  zoomIntensity: 1.2,
+  graphicsScale: 1.8,
   statCalloutSide: 'right',
+  energyWords: ['right', 'truth'],
   transcript: emptyTranscript,
   shotList: emptyShotList,
   brollMoments: emptyBroll,
@@ -101,7 +103,7 @@ export const RemotionRoot: React.FC = () => {
       defaultProps={defaultProps}
       schema={videoSchema}
       calculateMetadata={async ({props, abortSignal}) => {
-        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats] =
+        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats, renderPropsRaw] =
           await Promise.all([
           fetch(staticFile('transcript.json'), {signal: abortSignal}).then((r) => r.json() as Promise<Transcript>),
           fetch(staticFile('shot_list.json'), {signal: abortSignal}).then((r) => r.json() as Promise<ShotList>),
@@ -121,13 +123,19 @@ export const RemotionRoot: React.FC = () => {
           fetch(staticFile('video_beats.json'), {signal: abortSignal})
             .then((r) => (r.ok ? r.json() : defaultBeats) as Promise<VideoBeats>)
             .catch(() => defaultBeats),
+          fetch(staticFile('render_props.json'), {signal: abortSignal})
+            .then((r) => (r.ok ? r.json() : {}) as Promise<Record<string, unknown>>)
+            .catch(() => ({})),
         ]);
+
+        const renderProps = renderPropsRaw as Partial<VideoProps>;
 
         return {
           durationInFrames: transcript.total_frames,
           fps: transcript.fps ?? 30,
           props: {
             ...props,
+            ...renderProps,
             transcript,
             shotList,
             brollMoments,

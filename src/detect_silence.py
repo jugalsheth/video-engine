@@ -37,6 +37,7 @@ def detect(
     video_path: Path,
     min_silence: float | None = None,
     max_remove_ratio: float | None = None,
+    preferred_pause_seconds: list[float] | None = None,
 ) -> dict:
     min_silence = min_silence if min_silence is not None else jump_cut_min_silence()
     max_remove_ratio = (
@@ -80,6 +81,20 @@ def detect(
     if duration > 0 and removed / duration > max_remove_ratio:
         silences = []
         removed = 0
+
+    # Prefer cutting near script recording_cues PAUSE targets (±0.4s)
+    if preferred_pause_seconds and silences:
+        tuned: list[tuple[float, float]] = []
+        for s, e in silences:
+            mid = (s + e) / 2
+            best = min(preferred_pause_seconds, key=lambda t: abs(t - mid), default=None)
+            if best is not None and abs(best - mid) <= 0.4:
+                pad = min(0.08, (e - s) / 4)
+                tuned.append((max(s, best - pad), min(e, best + pad)))
+            else:
+                tuned.append((s, e))
+        silences = tuned
+        removed = sum(e - s for s, e in silences)
 
     kept: list[dict] = []
     cursor = 0.0

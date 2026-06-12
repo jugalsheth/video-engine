@@ -20,8 +20,10 @@ type Props = {
   captionStyle?: 'viral' | 'classic';
   closerStartFrame?: number;
   openLoopPayoffFrame?: number;
+  openLoopPlantFrame?: number;
   wordHighlightFrames?: Set<number>;
   stepBeats?: StepBeat[];
+  energyWords?: string[];
 };
 
 const STEP_CHAPTER_WINDOW = 45;
@@ -45,9 +47,10 @@ const getVisibleWords = (
   return words.slice(start, start + maxWords);
 };
 
-const isEnergyWord = (word: string) => {
+const isEnergyWord = (word: string, extra: string[] = []) => {
   const n = word.toLowerCase().replace(/[^a-z']/g, '');
-  return ENERGY_WORDS.some((e) => n.includes(e));
+  const merged = [...ENERGY_WORDS, ...extra.map((e) => e.toLowerCase())];
+  return merged.some((e) => n.includes(e.replace(/[^a-z']/g, '')));
 };
 
 export const CaptionLayer: React.FC<Props> = ({
@@ -56,8 +59,10 @@ export const CaptionLayer: React.FC<Props> = ({
   captionStyle = 'viral',
   closerStartFrame,
   openLoopPayoffFrame,
+  openLoopPlantFrame,
   wordHighlightFrames,
   stepBeats = [],
+  energyWords = [],
 }) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -102,6 +107,18 @@ export const CaptionLayer: React.FC<Props> = ({
         })
       : 0;
 
+  const plantTease =
+    openLoopPlantFrame &&
+    frame >= openLoopPlantFrame &&
+    frame <= openLoopPlantFrame + 45
+      ? spring({
+          frame: frame - openLoopPlantFrame,
+          fps,
+          config: SPRING_DEFAULT,
+          durationInFrames: 20,
+        })
+      : 0;
+
   return (
     <AbsoluteFill
       style={{
@@ -122,6 +139,12 @@ export const CaptionLayer: React.FC<Props> = ({
           boxShadow:
             payoffGlow > 0
               ? `0 0 ${interpolate(payoffGlow, [0, 0.5, 1], [0, 12, 0])}px rgba(0,212,255,0.6)`
+              : plantTease > 0
+                ? `0 0 ${interpolate(plantTease, [0, 0.5, 1], [0, 8, 4])}px rgba(255,184,0,0.5)`
+                : undefined,
+          border:
+            plantTease > 0.3
+              ? `1px solid rgba(255,184,0,${interpolate(plantTease, [0.3, 1], [0.2, 0.6])})`
               : undefined,
         }}
       >
@@ -140,7 +163,7 @@ export const CaptionLayer: React.FC<Props> = ({
             const globalIdx = words.indexOf(w);
             const isActive = globalIdx === activeIndex;
             const energy =
-              isEnergyWord(w.word) ||
+              isEnergyWord(w.word, energyWords) ||
               (wordHighlightFrames?.has(w.start_frame) ?? false);
             const localFrame = frame - w.start_frame;
 

@@ -138,6 +138,72 @@ def fill_fun_gaps(
     return result
 
 
+def enforce_min_visual_events(
+    transcript: dict,
+    shot_list: dict,
+    fun_result: dict,
+    broll_result: dict,
+    template: dict,
+) -> dict:
+    """Aggressively gap-fill until min_visual_events target is met."""
+    min_events = template.get("min_visual_events", 12)
+    words = transcript.get("words", [])
+    total = transcript.get("total_frames", 0)
+    full_text = transcript.get("full_text", "")
+    existing = list(fun_result.get("moments", []))
+    used_starts = {m["start_frame"] for m in existing}
+    injected: list[dict] = []
+    side_toggle = len(existing)
+
+    while True:
+        events = len(_event_frames(shot_list, {"moments": existing + injected}, broll_result))
+        if events >= min_events or len(injected) >= 8:
+            break
+        gaps = _find_gaps(_event_frames(shot_list, {"moments": existing + injected}, broll_result), total)
+        if not gaps:
+            mid = total // 2
+            gaps = [(max(0, mid - 60), min(total, mid + 60))]
+        gap_start, gap_end = gaps[0]
+        mid = gap_start + (gap_end - gap_start) // 2
+        word_obj = _word_near_frame(words, mid, full_text)
+        if not word_obj:
+            break
+        start = word_obj["start_frame"]
+        if start in used_starts:
+            break
+        fun_type = GAP_FILL_TYPES[len(injected) % len(GAP_FILL_TYPES)]
+        moment = {
+            "type": fun_type,
+            "start_frame": start,
+            "end_frame": start + RHYTHM_FUN_DURATION,
+            "keyword": word_obj.get("word", "BOOM"),
+            "mood": fun_result.get("mood", "chaos"),
+            "side": "left" if side_toggle % 2 == 0 else "right",
+            "source": "min_events_fill",
+        }
+        if fun_type == "comic_sfx":
+            moment["text"] = moment["keyword"].upper()[:8] + "!"
+        elif fun_type == "emoji_pop":
+            moment["emoji"] = "🔥"
+        injected.append(moment)
+        used_starts.add(start)
+        side_toggle += 1
+
+    if injected:
+        print(f"   Min-events fill: +{len(injected)} fun FX (target {min_events})")
+
+    all_moments = existing + injected
+    total_events = len(_event_frames(shot_list, {"moments": all_moments}, broll_result))
+    result = {**fun_result, "moments": all_moments}
+    result["summary"] = {
+        **fun_result.get("summary", {}),
+        "min_events_injected": len(injected),
+        "total_visual_events": total_events,
+        "min_target": min_events,
+    }
+    return result
+
+
 def _apply_dynamic_step_holds(shots: list, total_frames: int) -> None:
     """Hold each STEP_REVEAL until the next step, payoff, or closer."""
     step_shots = sorted(
