@@ -14,7 +14,7 @@ TOOL_BURST_WINDOW_FRAMES = 150  # allow tight spacing when listing tools
 MAX_LOGO_MOMENTS = 6
 MIN_TOKEN_LEN = 3
 
-CONFLICT_SHOT_TYPES = {"TITLE_CARD"}
+CONFLICT_SHOT_TYPES = {"TITLE_CARD", "CUSTOM_VISUAL"}
 TITLE_END_BUFFER_FRAMES = 12
 
 # Map broll_phrases / spoken mishears → brand_id

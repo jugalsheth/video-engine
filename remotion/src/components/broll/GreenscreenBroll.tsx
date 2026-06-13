@@ -14,7 +14,7 @@ import {NeuralNetwork} from './NeuralNetwork';
 import {PhoneMockup} from './PhoneMockup';
 import {SalaryChart} from './SalaryChart';
 import {TerminalWindow} from './TerminalWindow';
-import {SPRING_DEFAULT} from '../../layout';
+import {MEDIA_CONTAIN_CENTER, SPRING_DEFAULT} from '../../layout';
 import type {BrollMoment} from '../../types';
 
 const SVG_MAP: Record<string, React.FC<{durationFrames: number}>> = {
@@ -55,16 +55,28 @@ export const GreenscreenBroll: React.FC<Props> = ({moment}) => {
           overflow: 'hidden',
           backgroundColor: '#0C0B09',
           borderBottom: '3px solid rgba(0,212,255,0.35)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         {moment.clip_file ? (
           <OffthreadVideo
             src={staticFile(moment.clip_file)}
-            style={{width: '100%', height: '100%', objectFit: 'cover'}}
+            style={MEDIA_CONTAIN_CENTER}
             muted
           />
         ) : (
-          <SvgComponent durationFrames={duration} />
+          <AbsoluteFill
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+            }}
+          >
+            <SvgComponent durationFrames={duration} />
+          </AbsoluteFill>
         )}
       </AbsoluteFill>
     </AbsoluteFill>

@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {useOverlayScale} from '../../OverlayScaleContext';
-import {OVERLAY_BASE, overlaySize, SAFE, SPRING_DEFAULT} from '../../layout';
+import {MEDIA_COVER_CENTER, OVERLAY_BASE, overlaySize, SAFE, SPRING_DEFAULT} from '../../layout';
 import type {BrollMoment} from '../../types';
 
 type Props = {
@@ -35,13 +35,11 @@ export const StockVideoBroll: React.FC<Props> = ({moment}) => {
     return null;
   }
 
-  const brollSide = moment.side ?? 'right';
-
   return (
     <AbsoluteFill
       style={{
         justifyContent: 'flex-start',
-        alignItems: brollSide === 'left' ? 'flex-start' : 'flex-end',
+        alignItems: 'center',
         paddingTop: '38%',
         paddingLeft: SAFE.sides,
         paddingRight: SAFE.sides,
@@ -57,11 +55,15 @@ export const StockVideoBroll: React.FC<Props> = ({moment}) => {
           overflow: 'hidden',
           boxShadow: '0 12px 40px rgba(0,0,0,0.75)',
           border: '2px solid rgba(201,146,58,0.4)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#0C0B09',
         }}
       >
         <OffthreadVideo
           src={staticFile(moment.clip_file)}
-          style={{width: '100%', height: '100%', objectFit: 'cover'}}
+          style={MEDIA_COVER_CENTER}
           muted
         />
       </div>

@@ -1,9 +1,10 @@
 import React, {useMemo} from 'react';
-import {AbsoluteFill, OffthreadVideo, Sequence, staticFile} from 'remotion';
+import {AbsoluteFill, Sequence} from 'remotion';
 import {AudioLayer} from './components/AudioLayer';
 import {BrollRouter} from './components/broll/BrollRouter';
 import {CaptionLayer} from './components/CaptionLayer';
 import {StatCallout} from './components/StatCallout';
+import {CustomVisual} from './components/CustomVisual';
 import {StepChecklist} from './components/StepChecklist';
 import {StepNumberFlash} from './components/StepNumberFlash';
 import {TitleCard} from './components/TitleCard';
@@ -17,8 +18,22 @@ import {LogoPop} from './components/logos/LogoPop';
 import {RoleRouter} from './components/roles/RoleRouter';
 import {PostFX} from './components/PostFX';
 import {Watermark} from './components/Watermark';
+import {MainVideo} from './components/MainVideo';
+import {GlitchBurst} from './components/globalFx/GlitchBurst';
+import {VHSFilter} from './components/globalFx/VHSFilter';
+import {ScreenShake} from './components/globalFx/ScreenShake';
+import {FreezeStampOverlay} from './components/globalFx/FreezeStampOverlay';
+import {GlobalFxRouter} from './components/globalFx/GlobalFxRouter';
+import {SplitWipe} from './components/globalFx/SplitWipe';
+import {VideoFreezeWrap} from './components/globalFx/VideoFreezeWrap';
 import {OverlayScaleContext} from './OverlayScaleContext';
-import {filterBrollMoments, filterFunMoments, filterLogoMoments, filterRoleMoments} from './utils/conflictScheduler';
+import {
+  filterBrollMoments,
+  filterFunMoments,
+  filterGlobalFxMoments,
+  filterLogoMoments,
+  filterRoleMoments,
+} from './utils/conflictScheduler';
 import type {Shot, Transcript, VideoProps} from './types';
 
 const normalizeToken = (w: string) => w.toLowerCase().replace(/[^a-z0-9']/g, '');
@@ -91,6 +106,15 @@ const ShotLayer: React.FC<{
           number={(params.number as string | number) ?? '0'}
           label={(params.label as string) ?? ''}
           side={(params.position as 'left' | 'right') ?? props.statCalloutSide}
+          tickerEnabled={props.tickerEnabled ?? true}
+        />
+      );
+    case 'CUSTOM_VISUAL':
+      return (
+        <CustomVisual
+          description={(params.description as string) ?? ''}
+          assetPath={(params.asset_path as string) ?? 'custom_assets/'}
+          assetStatus={(params.asset_status as string) ?? 'needs_creation'}
         />
       );
     default:
@@ -110,10 +134,15 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
     zoomIntensity,
     graphicsScale,
     videoBeats,
+    globalFxMoments,
+    glitchIntensity = 0.6,
+    shakeIntensity = 2,
+    freezeStampEnabled = false,
   } = props;
   const stepBeatList = stepBeats?.beats ?? [];
   const shots = shotList.shots ?? [];
   const totalFrames = transcript.total_frames;
+  const rawGlobalFx = globalFxMoments?.moments ?? [];
 
   const hookShot = shots.find((s) => s.type === 'ZOOM_HOOK');
   const closerShot = shots.find((s) => s.type === 'ZOOM_CLOSER');
@@ -162,6 +191,34 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
     [shots, logoMoments],
   );
 
+  const acceptedGlobalFx = useMemo(() => {
+    const filtered = filterGlobalFxMoments(
+      shots,
+      rawGlobalFx,
+      acceptedBroll,
+      acceptedFun,
+    );
+    if (freezeStampEnabled) {
+      return filtered;
+    }
+    return filtered.filter((m) => m.type !== 'freeze_stamp');
+  }, [shots, rawGlobalFx, acceptedBroll, acceptedFun, freezeStampEnabled]);
+
+  const freezeMoments = useMemo(
+    () => acceptedGlobalFx.filter((m) => m.type === 'freeze_stamp'),
+    [acceptedGlobalFx],
+  );
+
+  const toastMoments = useMemo(
+    () => acceptedGlobalFx.filter((m) => m.type === 'notification_toast'),
+    [acceptedGlobalFx],
+  );
+
+  const splitWipeMoments = useMemo(
+    () => acceptedGlobalFx.filter((m) => m.type === 'split_wipe'),
+    [acceptedGlobalFx],
+  );
+
   const stepChecklistEnd = payoffFrame ?? closerStartFrame;
   const stepChecklistStart = stepBeatList.length > 0
     ? Math.min(...stepBeatList.map((b) => b.frame))
@@ -171,8 +228,17 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
   const brand = shotList.script_metadata?.brand;
   const wordHighlightShots = shots.filter((s) => s.type === 'WORD_HIGHLIGHT');
 
+  const videoContent = (
+    <GlitchBurst moments={acceptedGlobalFx} defaultIntensity={glitchIntensity}>
+      <VHSFilter moments={acceptedGlobalFx}>
+        <MainVideo brollMoments={acceptedBroll} />
+      </VHSFilter>
+    </GlitchBurst>
+  );
+
   return (
     <OverlayScaleContext.Provider value={graphicsScale}>
+    <ScreenShake moments={acceptedGlobalFx} defaultIntensity={shakeIntensity}>
     <AbsoluteFill style={{backgroundColor: '#0C0B09'}}>
       <ZoomHook
         zoomIntensity={hookIntensity}
@@ -182,12 +248,13 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         stepBeats={stepBeatList}
         closerEndScale={(closerShot?.params?.end_scale as number) ?? hookIntensity}
       >
-        <AbsoluteFill>
-          <OffthreadVideo
-            src={staticFile('source.mp4')}
-            style={{width: '100%', height: '100%', objectFit: 'cover'}}
-          />
-        </AbsoluteFill>
+        {freezeStampEnabled ? (
+          <VideoFreezeWrap moments={acceptedGlobalFx}>
+            {videoContent}
+          </VideoFreezeWrap>
+        ) : (
+          videoContent
+        )}
       </ZoomHook>
 
       <PostFX stepBeats={stepBeatList} />
@@ -228,6 +295,9 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
 
       {shots.map((shot, index) => {
         if (['ZOOM_HOOK', 'ZOOM_CLOSER', 'WORD_HIGHLIGHT', 'BROLL_OVERLAY', 'STEP_REVEAL'].includes(shot.type)) {
+          return null;
+        }
+        if (shot.type === 'CUSTOM_VISUAL' && shot.params?.asset_status !== 'ready') {
           return null;
         }
         const duration = Math.max(1, shot.end_frame - shot.start_frame);
@@ -300,6 +370,42 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         </Sequence>
       ))}
 
+      {freezeMoments.map((moment, index) => (
+        <Sequence
+          key={`freeze-stamp-${moment.start_frame}-${index}`}
+          from={moment.start_frame}
+          durationInFrames={moment.duration_frames}
+          layout="none"
+        >
+          <FreezeStampOverlay
+            stampText={moment.stamp_text ?? '0'}
+            durationFrames={moment.duration_frames}
+          />
+        </Sequence>
+      ))}
+
+      {toastMoments.map((moment, index) => (
+        <Sequence
+          key={`toast-${moment.start_frame}-${index}`}
+          from={moment.start_frame}
+          durationInFrames={moment.duration_frames}
+          layout="none"
+        >
+          <GlobalFxRouter moment={moment} />
+        </Sequence>
+      ))}
+
+      {splitWipeMoments.map((moment, index) => (
+        <Sequence
+          key={`split-wipe-${moment.start_frame}-${index}`}
+          from={moment.start_frame}
+          durationInFrames={moment.duration_frames}
+          layout="none"
+        >
+          <SplitWipe durationFrames={moment.duration_frames} />
+        </Sequence>
+      ))}
+
       <Watermark
         handle={brand?.handle ?? ''}
         opacity={brand?.watermarkOpacity ?? 0.45}
@@ -318,6 +424,7 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         energyWords={props.energyWords}
       />
     </AbsoluteFill>
+    </ScreenShake>
     </OverlayScaleContext.Provider>
   );
 };

@@ -21,6 +21,10 @@ def jump_cuts_enabled() -> bool:
     return _flag("JUMP_CUTS", "true")
 
 
+def global_fx_enabled() -> bool:
+    return _flag("GLOBAL_FX", "false")
+
+
 def skip_stock_fetch() -> bool:
     if zero_cost_mode():
         return True

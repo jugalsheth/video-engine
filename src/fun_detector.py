@@ -25,7 +25,7 @@ MEDIUM_WORDS = {
     "wrong", "really", "money", "salary",
 }
 
-CONFLICT_SHOT_TYPES = {"TITLE_CARD"}
+CONFLICT_SHOT_TYPES = {"TITLE_CARD", "CUSTOM_VISUAL"}
 TITLE_END_BUFFER_FRAMES = 12
 
 EMOJI_MAP = {

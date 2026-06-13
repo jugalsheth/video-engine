@@ -6,6 +6,7 @@ Uses script visual_moments + video_triggers when matched; transcript regex other
 """
 
 import re
+from pathlib import Path
 
 from src.frame_utils import frame_for_phrase, fuzzy_frame_for_phrase, normalize, words_after_number
 from src.template_loader import resolve_template
@@ -449,6 +450,54 @@ def _resolve_script_stats(script: dict, transcript: dict) -> list[dict]:
     return _filter_stats(_merge_stats_close(regex_stats))
 
 
+CUSTOM_VISUAL_HOLD_FRAMES = 90
+
+
+def _custom_visual_shots(script: dict, transcript: dict) -> tuple[list[dict], list[tuple[int, int]]]:
+    """Match custom_visual_overrides to transcript; reserve segments for detectors."""
+    overrides = script.get("custom_visual_overrides") or []
+    if not overrides:
+        return [], []
+
+    words = transcript.get("words", [])
+    full_text = transcript.get("full_text", "")
+    script_id = Path(script.get("filename_hint", "script")).stem
+    shots: list[dict] = []
+    reserved: list[tuple[int, int]] = []
+
+    for override in overrides:
+        trigger = override.get("trigger_phrase", "")
+        if not trigger:
+            continue
+        frame = frame_for_phrase(words, full_text, trigger)
+        if frame is None:
+            frame = fuzzy_frame_for_phrase(words, trigger)
+        if frame is None:
+            continue
+
+        end_frame = min(
+            frame + CUSTOM_VISUAL_HOLD_FRAMES,
+            transcript.get("total_frames", frame + CUSTOM_VISUAL_HOLD_FRAMES),
+        )
+        asset_status = override.get("asset_status", "needs_creation")
+        asset_path = f"custom_assets/{script_id}/"
+        shots.append({
+            "type": "CUSTOM_VISUAL",
+            "start_frame": frame,
+            "end_frame": end_frame,
+            "params": {
+                "trigger_phrase": trigger,
+                "description": override.get("description", ""),
+                "asset_status": asset_status,
+                "asset_path": asset_path,
+                "source": "custom_visual_overrides",
+            },
+        })
+        reserved.append((frame, end_frame))
+
+    return shots, reserved
+
+
 def from_script(transcript: dict, script: dict) -> dict:
     title = script.get("title_overlay", "UNTITLED")
     subtitle = script.get("subtitle_overlay", "")
@@ -457,6 +506,8 @@ def from_script(transcript: dict, script: dict) -> dict:
     total = transcript["total_frames"]
 
     shots = _base_shots(transcript, title, subtitle, intensity)
+    custom_shots, reserved_ranges = _custom_visual_shots(script, transcript)
+    shots.extend(custom_shots)
     stats = _resolve_script_stats(script, transcript)
     shots.extend(stats)
     shots.extend(_resolve_steps(script, transcript))
@@ -490,6 +541,8 @@ def from_script(transcript: dict, script: dict) -> dict:
             "retention_notes": script.get("retention_notes"),
             "recording_cues": script.get("recording_cues", []),
             "edit_template": script.get("edit_template") or template.get("id"),
+            "custom_visual_overrides": script.get("custom_visual_overrides", []),
+            "reserved_ranges": reserved_ranges,
         },
     }
 

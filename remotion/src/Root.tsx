@@ -2,7 +2,7 @@ import React from 'react';
 import {Composition, staticFile} from 'remotion';
 import {z} from 'zod';
 import {VideoComposition} from './VideoComposition';
-import type {BrollData, FunData, LogoData, RoleData, ShotList, StepBeatData, Transcript, VideoBeats, VideoProps} from './types';
+import type {BrollData, FunData, GlobalFxData, LogoData, RoleData, ShotList, StepBeatData, Transcript, VideoBeats, VideoProps} from './types';
 
 export const videoSchema = z.object({
   titleVerticalPosition: z.number().default(15),
@@ -11,6 +11,12 @@ export const videoSchema = z.object({
   zoomIntensity: z.number().default(1.2),
   graphicsScale: z.number().min(0.8).max(2.2).default(1.8),
   statCalloutSide: z.enum(['left', 'right']).default('right'),
+  glitchIntensity: z.number().min(0).max(1.5).default(0.6),
+  shakeIntensity: z.number().min(0).max(10).default(2),
+  tickerEnabled: z.boolean().default(true),
+  toastEnabled: z.boolean().default(true),
+  vhsEnabled: z.boolean().default(false),
+  freezeStampEnabled: z.boolean().default(false),
   energyWords: z.array(z.string()).optional(),
 });
 
@@ -73,6 +79,12 @@ const defaultBeats: VideoBeats = {
   crust_settle: 1.1,
 };
 
+const emptyGlobalFx: GlobalFxData = {
+  moments: [],
+  skipped: [],
+  summary: {detected: 0, skipped: 0, types: []},
+};
+
 const defaultProps: VideoProps = {
   titleVerticalPosition: 15,
   captionVerticalPosition: 75,
@@ -80,6 +92,12 @@ const defaultProps: VideoProps = {
   zoomIntensity: 1.2,
   graphicsScale: 1.8,
   statCalloutSide: 'right',
+  glitchIntensity: 0.6,
+  shakeIntensity: 2,
+  tickerEnabled: true,
+  toastEnabled: true,
+  vhsEnabled: false,
+  freezeStampEnabled: false,
   energyWords: ['right', 'truth'],
   transcript: emptyTranscript,
   shotList: emptyShotList,
@@ -89,6 +107,7 @@ const defaultProps: VideoProps = {
   logoMoments: emptyLogos,
   stepBeats: emptyStepBeats,
   videoBeats: defaultBeats,
+  globalFxMoments: emptyGlobalFx,
 };
 
 export const RemotionRoot: React.FC = () => {
@@ -103,7 +122,7 @@ export const RemotionRoot: React.FC = () => {
       defaultProps={defaultProps}
       schema={videoSchema}
       calculateMetadata={async ({props, abortSignal}) => {
-        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats, renderPropsRaw] =
+        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats, globalFxMoments, renderPropsRaw] =
           await Promise.all([
           fetch(staticFile('transcript.json'), {signal: abortSignal}).then((r) => r.json() as Promise<Transcript>),
           fetch(staticFile('shot_list.json'), {signal: abortSignal}).then((r) => r.json() as Promise<ShotList>),
@@ -123,6 +142,9 @@ export const RemotionRoot: React.FC = () => {
           fetch(staticFile('video_beats.json'), {signal: abortSignal})
             .then((r) => (r.ok ? r.json() : defaultBeats) as Promise<VideoBeats>)
             .catch(() => defaultBeats),
+          fetch(staticFile('global_fx_moments.json'), {signal: abortSignal})
+            .then((r) => (r.ok ? r.json() : emptyGlobalFx) as Promise<GlobalFxData>)
+            .catch(() => emptyGlobalFx),
           fetch(staticFile('render_props.json'), {signal: abortSignal})
             .then((r) => (r.ok ? r.json() : {}) as Promise<Record<string, unknown>>)
             .catch(() => ({})),
@@ -144,6 +166,7 @@ export const RemotionRoot: React.FC = () => {
             logoMoments,
             stepBeats,
             videoBeats,
+            globalFxMoments,
           },
         };
       }}

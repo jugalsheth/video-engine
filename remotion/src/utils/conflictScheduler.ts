@@ -1,6 +1,5 @@
-import type {BrollMoment, FunMoment, LogoMoment, RoleMoment, Shot, StepBeat} from '../types';
+import type {BrollMoment, FunMoment, GlobalFxMoment, LogoMoment, RoleMoment, Shot, StepBeat} from '../types';
 
-// BROLL_OVERLAY in shot_list is metadata only — real clips come from broll_moments.json
 const BLOCKING_TYPES = new Set(['TITLE_CARD']);
 const TITLE_BUFFER_FRAMES = 12;
 const STEP_WINDOW_BUFFER = 60;
@@ -196,6 +195,75 @@ export const filterLogoMoments = (
       overlaps(moment.start_frame, moment.end_frame, a.start_frame, a.end_frame),
     );
     if (overlap) continue;
+
+    accepted.push(moment);
+  }
+
+  return accepted;
+};
+
+const momentEnd = (m: GlobalFxMoment): number =>
+  m.start_frame + m.duration_frames;
+
+const overlapsBrollPip = (
+  start: number,
+  end: number,
+  brollMoments: BrollMoment[],
+): boolean =>
+  brollMoments.some((b) => {
+    if (b.layout === 'greenscreen') return false;
+    return overlaps(start, end, b.start_frame, b.end_frame);
+  });
+
+const overlapsFunRegion = (
+  start: number,
+  end: number,
+  funMoments: FunMoment[],
+): boolean =>
+  funMoments.some((f) => overlaps(start, end, f.start_frame, f.end_frame));
+
+/** Filter global FX moments — freeze/glitch/shake allowed broadly; toast region-gated. */
+export const filterGlobalFxMoments = (
+  shots: Shot[],
+  globalFxMoments: GlobalFxMoment[],
+  brollMoments: BrollMoment[] = [],
+  funMoments: FunMoment[] = [],
+): GlobalFxMoment[] => {
+  const glitchFrames = new Set(
+    globalFxMoments.filter((m) => m.type === 'glitch_burst').map((m) => m.start_frame),
+  );
+
+  const accepted: GlobalFxMoment[] = [];
+
+  for (const moment of globalFxMoments) {
+    const end = momentEnd(moment);
+
+    if (moment.type === 'vhs_filter') {
+      const competes = [...glitchFrames].some((gf) =>
+        overlaps(moment.start_frame, end, gf, gf + 8),
+      );
+      if (competes) continue;
+    }
+
+    if (moment.type === 'notification_toast') {
+      if (overlapsBrollPip(moment.start_frame, end, brollMoments)) continue;
+      if (overlapsFunRegion(moment.start_frame, end, funMoments)) continue;
+    }
+
+    if (moment.type === 'freeze_stamp') {
+      accepted.push(moment);
+      continue;
+    }
+
+    if (moment.type === 'glitch_burst' || moment.type === 'screen_shake') {
+      accepted.push(moment);
+      continue;
+    }
+
+    if (moment.type === 'vhs_filter' || moment.type === 'split_wipe') {
+      accepted.push(moment);
+      continue;
+    }
 
     accepted.push(moment);
   }

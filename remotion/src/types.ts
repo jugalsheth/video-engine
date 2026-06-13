@@ -159,6 +159,32 @@ export type VideoBeats = {
   };
 };
 
+export type GlobalFxMoment = {
+  type:
+    | 'glitch_burst'
+    | 'freeze_stamp'
+    | 'screen_shake'
+    | 'notification_toast'
+    | 'vhs_filter'
+    | 'split_wipe';
+  start_frame: number;
+  duration_frames: number;
+  intensity?: number;
+  stamp_text?: string;
+  toast_text?: string;
+  toast_icon?: string;
+  side?: 'left' | 'right';
+  source: string;
+  trigger_phrase?: string;
+  end_frame?: number;
+};
+
+export type GlobalFxData = {
+  moments: GlobalFxMoment[];
+  skipped?: Array<GlobalFxMoment & {reason?: string}>;
+  summary?: {detected: number; skipped: number; types: string[]};
+};
+
 export type VideoProps = {
   titleVerticalPosition: number;
   captionVerticalPosition: number;
@@ -166,6 +192,12 @@ export type VideoProps = {
   zoomIntensity: number;
   graphicsScale: number;
   statCalloutSide: 'left' | 'right';
+  glitchIntensity?: number;
+  shakeIntensity?: number;
+  tickerEnabled?: boolean;
+  toastEnabled?: boolean;
+  vhsEnabled?: boolean;
+  freezeStampEnabled?: boolean;
   energyWords?: string[];
   transcript: Transcript;
   shotList: ShotList;
@@ -175,4 +207,5 @@ export type VideoProps = {
   logoMoments: LogoData;
   stepBeats: StepBeatData;
   videoBeats: VideoBeats;
+  globalFxMoments: GlobalFxData;
 };

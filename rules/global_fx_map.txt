@@ -1,0 +1,43 @@
+# Global FX phrase pools — config-over-code (mirrors fun_animation_map.txt)
+
+[glitch_burst]
+turns out
+the actual problem was
+here's what really happened
+plot twist
+but here's the thing
+I was wrong about
+
+[notification_toast]
+buried in
+drowning in
+couldn't keep up
+tabs open
+notifications
+inbox
+
+[toast_text_mapping]
+buried in -> 47 unread
+drowning in -> 47 unread
+tabs open -> 23 tabs
+notifications -> 12 new
+inbox -> 12 new
+
+[toast_icon_mapping]
+buried in -> slack
+drowning in -> slack
+tabs open -> slack
+notifications -> email
+inbox -> email
+
+[vhs_before_phrases]
+the old way
+before I
+used to
+back then
+
+[vhs_after_phrases]
+the new way
+now I
+after that
+these days

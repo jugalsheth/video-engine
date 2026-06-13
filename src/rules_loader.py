@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.frame_utils import normalize
+
 ENGINE_ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ENGINE_ROOT / "rules"
 
@@ -39,6 +41,36 @@ def load_fun_groups() -> dict[str, tuple[list[str], int]]:
 
 def load_role_keywords() -> dict[str, list[str]]:
     return load_arrow_map("role_cast_map.txt")
+
+
+def load_global_fx_map() -> dict[str, list[str] | dict[str, str]]:
+    """Parse global_fx_map.txt with [section] headers and key -> value mappings."""
+    path = RULES_DIR / "global_fx_map.txt"
+    sections: dict[str, list[str] | dict[str, str]] = {}
+    current: str | None = None
+    if not path.exists():
+        return sections
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            current = line[1:-1].strip()
+            if current.endswith("_mapping"):
+                sections[current] = {}
+            else:
+                sections[current] = []
+            continue
+        if current is None:
+            continue
+        bucket = sections[current]
+        if isinstance(bucket, dict):
+            if "->" in line:
+                key, val = line.split("->", 1)
+                bucket[normalize(key.strip())] = val.strip()
+        elif "->" not in line:
+            bucket.append(line)
+    return sections
 
 
 def load_logo_map() -> dict[str, dict]:

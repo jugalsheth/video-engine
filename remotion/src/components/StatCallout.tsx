@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Easing,
   interpolate,
   spring,
   useCurrentFrame,
@@ -14,6 +15,7 @@ type Props = {
   number: string | number;
   label: string;
   side?: 'left' | 'right';
+  tickerEnabled?: boolean;
 };
 
 const parseNumber = (value: string | number): number => {
@@ -64,6 +66,7 @@ export const StatCallout: React.FC<Props> = ({
   number,
   label,
   side = 'right',
+  tickerEnabled = true,
 }) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -78,8 +81,18 @@ export const StatCallout: React.FC<Props> = ({
       : 0;
   const popScale = 0.5 + entrance * 0.5;
   const flash = frame <= 2 ? interpolate(frame, [0, 1, 2], [0, 0.5, 0], {extrapolateRight: 'clamp'}) : 0;
-  const countProgress = spring({frame, fps, config: {damping: 200, stiffness: 80}, durationInFrames: 45});
-  const display = Math.round(interpolate(countProgress, [0, 1], [0, target]));
+
+  let display: number;
+  if (tickerEnabled) {
+    const progress = interpolate(frame, [0, 20], [0, target], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+      easing: Easing.out(Easing.cubic),
+    });
+    display = Math.round(progress);
+  } else {
+    display = target;
+  }
 
   return (
     <AbsoluteFill

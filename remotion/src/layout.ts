@@ -64,3 +64,22 @@ export const OVERLAY_BASE = {
 
 export const overlaySize = (base: number, scale: number): number =>
   Math.round(base * scale);
+
+/** Full-bleed cover — default A-roll */
+export const MEDIA_COVER_CENTER = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover' as const,
+  objectPosition: 'center center',
+};
+
+/** Greenscreen stock — fit entire clip, letterbox on dark panel */
+export const MEDIA_CONTAIN_CENTER = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'contain' as const,
+  objectPosition: 'center center',
+};
+
+/** A-roll focal point when top greenscreen panel is active (face in lower strip) */
+export const AROLL_GREENSCREEN_POSITION = 'center 28%';

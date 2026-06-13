@@ -8,13 +8,34 @@ TEMPLATE_RENDER_PROFILES = {
         "captionVerticalPosition": 75,
         "zoomIntensity": 1.2,
         "captionStyle": "viral",
+        "glitchIntensity": 0.7,
+        "shakeIntensity": 2.5,
+        "tickerEnabled": True,
+        "toastEnabled": True,
+        "vhsEnabled": True,
+        "freezeStampEnabled": False,
     },
     "CONFESSION_STAT": {
         "graphicsScale": 1.75,
         "captionVerticalPosition": 75,
         "zoomIntensity": 1.18,
         "captionStyle": "viral",
+        "glitchIntensity": 0.8,
+        "shakeIntensity": 2,
+        "tickerEnabled": True,
+        "toastEnabled": False,
+        "vhsEnabled": True,
+        "freezeStampEnabled": False,
     },
+}
+
+DEFAULT_FX_PROPS = {
+    "glitchIntensity": 0.5,
+    "shakeIntensity": 2,
+    "tickerEnabled": True,
+    "toastEnabled": True,
+    "vhsEnabled": False,
+    "freezeStampEnabled": False,
 }
 
 
@@ -30,6 +51,12 @@ def resolve_render_props(script: dict | None, brand_config: dict | None = None) 
         "zoomIntensity": profile["zoomIntensity"],
         "graphicsScale": profile["graphicsScale"],
         "statCalloutSide": brand.get("statCalloutSide", "right"),
+        "glitchIntensity": profile.get("glitchIntensity", DEFAULT_FX_PROPS["glitchIntensity"]),
+        "shakeIntensity": profile.get("shakeIntensity", DEFAULT_FX_PROPS["shakeIntensity"]),
+        "tickerEnabled": profile.get("tickerEnabled", DEFAULT_FX_PROPS["tickerEnabled"]),
+        "toastEnabled": profile.get("toastEnabled", DEFAULT_FX_PROPS["toastEnabled"]),
+        "vhsEnabled": profile.get("vhsEnabled", DEFAULT_FX_PROPS["vhsEnabled"]),
+        "freezeStampEnabled": profile.get("freezeStampEnabled", DEFAULT_FX_PROPS["freezeStampEnabled"]),
     }
 
     if script:

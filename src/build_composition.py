@@ -8,7 +8,7 @@ import json
 import shutil
 from pathlib import Path
 
-from src import beat_detector, broll_detector, fetch_broll, fetch_music, fun_detector, logo_detector, lottie_assets, role_caster, step_beat_detector
+from src import beat_detector, broll_detector, fetch_broll, fetch_music, fun_detector, global_fx_detector, logo_detector, lottie_assets, role_caster, step_beat_detector
 from src.render_props import resolve_render_props
 from src.template_loader import resolve_template
 from src.trigger_audit import preferred_pause_seconds
@@ -29,6 +29,33 @@ def _load_brand_config() -> dict:
     if not BRAND_CONFIG_PATH.exists():
         return {}
     return json.loads(BRAND_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def _stage_custom_assets(script: dict | None, shot_list: dict) -> None:
+    """Copy ready custom assets from raw_videos into remotion/public for Remotion."""
+    if not script:
+        return
+    overrides = script.get("custom_visual_overrides") or []
+    ready = [o for o in overrides if o.get("asset_status") == "ready"]
+    if not ready:
+        return
+
+    script_id = Path(script.get("filename_hint", "script")).stem
+    src_dir = ENGINE_ROOT / "raw_videos" / "custom_assets" / script_id
+    if not src_dir.exists():
+        print(f"   Custom assets folder missing: {src_dir}")
+        return
+
+    dest_dir = PUBLIC_DIR / "custom_assets" / script_id
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for f in src_dir.iterdir():
+        if f.is_file() and f.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".mp4"}:
+            shutil.copy2(f, dest_dir / f.name)
+            copied += 1
+    if copied:
+        print(f"   Staged {copied} custom asset(s) for {script_id}")
+
 
 def prepare(
     video_path: str,
@@ -72,6 +99,11 @@ def prepare(
     role_result = role_caster.detect(transcript, enriched_shot_list)
     beats_result = beat_detector.detect(transcript, script)
 
+    render_props = resolve_render_props(script, brand_config)
+    global_fx_result = global_fx_detector.detect(
+        transcript, enriched_shot_list, beats_result, script, render_props,
+    )
+
     used_cut = False
     if jump_cuts_enabled():
         try:
@@ -79,7 +111,7 @@ def prepare(
             silence_map = detect_silence(video_path, preferred_pause_seconds=pause_hints or None)
             (PUBLIC_DIR / "silence_map.json").write_text(json.dumps(silence_map, indent=2))
             if silence_map.get("removed_total_s", 0) >= 0.1:
-                transcript, enriched_shot_list, broll_result, fun_result, logo_result, role_result, beats_result, _ = (
+                transcript, enriched_shot_list, broll_result, fun_result, logo_result, role_result, beats_result, global_fx_result, _ = (
                     apply_jump_cuts(
                         video_path,
                         dest_cut,
@@ -92,6 +124,7 @@ def prepare(
                         logo_result,
                         role_result,
                         beats_result,
+                        global_fx_result,
                     )
                 )
                 used_cut = dest_cut.exists()
@@ -144,9 +177,9 @@ def prepare(
     role_path = PUBLIC_DIR / "role_moments.json"
     beats_path = PUBLIC_DIR / "video_beats.json"
     step_beats_path = PUBLIC_DIR / "step_beats.json"
+    global_fx_path = PUBLIC_DIR / "global_fx_moments.json"
     step_beats_result = step_beat_detector.detect(transcript, enriched_shot_list)
 
-    render_props = resolve_render_props(script, brand_config)
     (PUBLIC_DIR / "render_props.json").write_text(json.dumps(render_props, indent=2))
 
     transcript_path.write_text(json.dumps(transcript, indent=2))
@@ -158,12 +191,15 @@ def prepare(
     role_caster.save(role_result, role_path)
     beat_detector.save(beats_result, beats_path)
     step_beat_detector.save(step_beats_result, step_beats_path)
+    global_fx_detector.save(global_fx_result, global_fx_path)
 
     lottie_warnings = lottie_assets.validate(PUBLIC_DIR)
     for w in lottie_warnings:
         print(f"   ⚠️  Lottie: {w}")
     if not lottie_warnings:
         print("   Lottie assets OK")
+
+    _stage_custom_assets(script, enriched_shot_list)
 
     total_frames = transcript.get("total_frames", 300)
     est_render_mins = round((total_frames / 30) * 0.15, 1)
@@ -196,6 +232,8 @@ def prepare(
         "step_numbers": step_beats_result["summary"]["steps"],
         "crust_frame": beats_result["crust_start"],
         "hook_end_frame": beats_result["hook_end"],
+        "global_fx_detected": global_fx_result["summary"]["detected"],
+        "global_fx_types": global_fx_result["summary"]["types"],
         "estimated_render_mins": est_render_mins,
     }
 
@@ -206,7 +244,7 @@ def prepare(
         summary["trigger_audit_passed"] = audit_result.get("passed")
         summary["trigger_match_rate"] = audit_result.get("match_rate")
 
-    print("   Staged: source.mp4, transcript.json, shot_list.json, broll_moments.json, fun_moments.json, logo_moments.json, role_moments.json, step_beats.json, video_beats.json, render_props.json")
+    print("   Staged: source.mp4, transcript.json, shot_list.json, broll_moments.json, fun_moments.json, logo_moments.json, role_moments.json, step_beats.json, video_beats.json, global_fx_moments.json, render_props.json")
     print(
         f"   Shots: {summary['shots_placed']} | "
         f"B-roll: {summary['broll_detected']} detected, {summary['broll_skipped']} skipped | "

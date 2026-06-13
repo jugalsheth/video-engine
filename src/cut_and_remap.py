@@ -117,6 +117,20 @@ def _concat_segments(source: Path, kept: list[dict], dest: Path, work_dir: Path)
     list_file.unlink(missing_ok=True)
 
 
+def _remap_global_fx(data: dict, frame_map: list[tuple[int, int]], total_frames: int) -> dict:
+    new_moments = []
+    for m in data.get("moments", []):
+        ns = _remap_frame(m["start_frame"], frame_map)
+        if ns >= total_frames:
+            continue
+        updated = {**m, "start_frame": ns}
+        if "end_frame" in m:
+            updated["end_frame"] = min(_remap_frame(int(m["end_frame"]), frame_map), total_frames)
+        new_moments.append(updated)
+    data["moments"] = new_moments
+    return data
+
+
 def apply_jump_cuts(
     source_video: Path,
     dest_video: Path,
@@ -129,16 +143,18 @@ def apply_jump_cuts(
     logos: dict,
     roles: dict,
     beats: dict,
-) -> tuple[dict, dict, dict, dict, dict, dict, dict, int]:
+    global_fx: dict | None = None,
+) -> tuple[dict, dict, dict, dict, dict, dict, dict, dict, int]:
+    empty_global_fx = global_fx or {"moments": []}
     kept = silence_map.get("kept_segments", [])
     if len(kept) <= 1 and silence_map.get("removed_total_s", 0) < 0.1:
-        return transcript, shot_list, broll, fun, logos, roles, beats, transcript["total_frames"]
+        return transcript, shot_list, broll, fun, logos, roles, beats, empty_global_fx, transcript["total_frames"]
 
     try:
         _concat_segments(source_video, kept, dest_video, public_dir / "cut_work")
     except subprocess.CalledProcessError as e:
         print(f"   Jump cut failed, using uncut video: {e}")
-        return transcript, shot_list, broll, fun, logos, roles, beats, transcript["total_frames"]
+        return transcript, shot_list, broll, fun, logos, roles, beats, empty_global_fx, transcript["total_frames"]
 
     frame_map, total_frames = _build_frame_map(kept)
     (public_dir / "frame_map.json").write_text(
@@ -152,6 +168,7 @@ def apply_jump_cuts(
     logos = _remap_json(logos, frame_map, total_frames)
     roles = _remap_json(roles, frame_map, total_frames)
     beats = _remap_json(beats, frame_map, total_frames)
+    global_fx = _remap_global_fx(empty_global_fx, frame_map, total_frames)
 
     print(f"   Jump cuts: removed {silence_map.get('removed_total_s', 0)}s → {total_frames} frames")
-    return transcript, shot_list, broll, fun, logos, roles, beats, total_frames
+    return transcript, shot_list, broll, fun, logos, roles, beats, global_fx, total_frames

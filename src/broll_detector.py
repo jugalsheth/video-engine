@@ -41,7 +41,7 @@ SEARCH_QUERIES: dict[str, str] = {
     "growth_chart": "career success office professional",
 }
 
-CONFLICT_SHOT_TYPES = {"TITLE_CARD"}
+CONFLICT_SHOT_TYPES = {"TITLE_CARD", "CUSTOM_VISUAL"}
 TITLE_END_BUFFER_FRAMES = 12
 
 
