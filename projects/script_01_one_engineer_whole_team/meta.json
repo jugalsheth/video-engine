@@ -1,0 +1,20 @@
+{
+  "project_id": "script_01_cursor_is_worth_the",
+  "script_number": 1,
+  "title": "ONE ENGINEER. WHOLE TEAM OUTPUT.",
+  "status": "rendered",
+  "raw_filename_original": "script_01_one_engineer_whole_team.mp4",
+  "matched_script_id": "script_01_one_engineer_whole_team",
+  "created_at": "2026-06-17T20:19:24+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_01_one_engineer_whole_team/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_01_one_engineer_whole_team/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_01_one_engineer_whole_team/assets"
+  },
+  "updated_at": "2026-06-17T20:19:24+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-17T20:22:52+00:00",
+  "render_minutes": 2.2,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0
+}

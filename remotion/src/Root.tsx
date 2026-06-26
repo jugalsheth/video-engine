@@ -2,7 +2,7 @@ import React from 'react';
 import {Composition, staticFile} from 'remotion';
 import {z} from 'zod';
 import {VideoComposition} from './VideoComposition';
-import type {BrollData, FunData, GlobalFxData, LogoData, RoleData, ShotList, StepBeatData, Transcript, VideoBeats, VideoProps} from './types';
+import type {BrollData, FunData, GlobalFxData, LogoData, RoleData, ShotList, SocialData, StepBeatData, Transcript, VideoBeats, VideoProps} from './types';
 
 export const videoSchema = z.object({
   titleVerticalPosition: z.number().default(15),
@@ -85,6 +85,12 @@ const emptyGlobalFx: GlobalFxData = {
   summary: {detected: 0, skipped: 0, types: []},
 };
 
+const emptySocial: SocialData = {
+  moments: [],
+  skipped: [],
+  summary: {detected: 0, skipped: 0, types: []},
+};
+
 const defaultProps: VideoProps = {
   titleVerticalPosition: 15,
   captionVerticalPosition: 75,
@@ -108,6 +114,7 @@ const defaultProps: VideoProps = {
   stepBeats: emptyStepBeats,
   videoBeats: defaultBeats,
   globalFxMoments: emptyGlobalFx,
+  socialMoments: emptySocial,
 };
 
 export const RemotionRoot: React.FC = () => {
@@ -122,7 +129,7 @@ export const RemotionRoot: React.FC = () => {
       defaultProps={defaultProps}
       schema={videoSchema}
       calculateMetadata={async ({props, abortSignal}) => {
-        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats, globalFxMoments, renderPropsRaw] =
+        const [transcript, shotList, brollMoments, funMoments, roleMoments, logoMoments, stepBeats, videoBeats, globalFxMoments, socialMoments, renderPropsRaw] =
           await Promise.all([
           fetch(staticFile('transcript.json'), {signal: abortSignal}).then((r) => r.json() as Promise<Transcript>),
           fetch(staticFile('shot_list.json'), {signal: abortSignal}).then((r) => r.json() as Promise<ShotList>),
@@ -145,6 +152,9 @@ export const RemotionRoot: React.FC = () => {
           fetch(staticFile('global_fx_moments.json'), {signal: abortSignal})
             .then((r) => (r.ok ? r.json() : emptyGlobalFx) as Promise<GlobalFxData>)
             .catch(() => emptyGlobalFx),
+          fetch(staticFile('social_moments.json'), {signal: abortSignal})
+            .then((r) => (r.ok ? r.json() : emptySocial) as Promise<SocialData>)
+            .catch(() => emptySocial),
           fetch(staticFile('render_props.json'), {signal: abortSignal})
             .then((r) => (r.ok ? r.json() : {}) as Promise<Record<string, unknown>>)
             .catch(() => ({})),
@@ -167,6 +177,7 @@ export const RemotionRoot: React.FC = () => {
             stepBeats,
             videoBeats,
             globalFxMoments,
+            socialMoments,
           },
         };
       }}

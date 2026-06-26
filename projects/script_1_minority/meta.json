@@ -1,0 +1,29 @@
+{
+  "project_id": "script_1_minority",
+  "script_number": null,
+  "title": "YOU'RE NOT BEHIND",
+  "status": "rendered",
+  "raw_filename_original": "raw.mp4",
+  "matched_script_id": "script_1_minority",
+  "created_at": "2026-06-15T00:10:44+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_1_minority/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_1_minority/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_1_minority/assets"
+  },
+  "updated_at": "2026-06-14T23:51:39+00:00",
+  "custom_visual_overrides": [
+    {
+      "trigger_phrase": "most people live in the white area",
+      "description": "Each dot = 3.2M people \u2014 global AI usage matrix",
+      "asset_status": "needs_creation",
+      "layout": "hero"
+    }
+  ],
+  "rendered_at": "2026-06-15T00:14:42+00:00",
+  "render_minutes": 3.1,
+  "custom_assets_found": [
+    "white_area_matrix.jpg"
+  ],
+  "custom_assets_needed": 0
+}

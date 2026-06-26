@@ -1,0 +1,39 @@
+{
+  "skip_archive_match": true,
+  "title_overlay": "YOU'RE NOT BEHIND",
+  "subtitle_overlay": "the AI usage reality check",
+  "hook_type": "CONTRARIAN STRIKE",
+  "caption_hook": "90% of engineers think they're behind on AI — but perception creates reality.",
+  "hashtags": ["#AIEngineer", "#TechCareers", "#BuildingInPublic", "#AIAutomation"],
+  "territory": "Tech Made Simple",
+  "filename_hint": "script_1_minority.mp4",
+  "custom_visual_overrides": [
+    {
+      "trigger_phrase": "most people live in the white area",
+      "description": "Each dot = 3.2M people — global AI usage matrix",
+      "asset_status": "needs_creation",
+      "layout": "hero"
+    }
+  ],
+  "video_triggers": {
+    "stat_phrases": [
+      {"phrase": "90 % of the engineers", "display": "90%", "label": "THINK THEY'RE BEHIND"}
+    ],
+    "fun_phrases": ["wild", "secret", "normal", "pure building"],
+    "energy_words": ["unless", "minority", "behind"],
+    "broll_phrases": ["automations", "real users", "ai tool"],
+    "beat_phrases": {
+      "crust": "here's what's wild",
+      "payoff": "unless you perceive yourself"
+    }
+  },
+  "visual_moments": [
+    {
+      "at_phrase": "tiny red minority",
+      "graphic": "!",
+      "label": "BUILDERS",
+      "type": "stat",
+      "side": "right"
+    }
+  ]
+}

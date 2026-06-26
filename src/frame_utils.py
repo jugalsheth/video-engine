@@ -63,3 +63,35 @@ def words_after_number(words: list, start_idx: int, count: int = 4) -> str:
         if token and not re.match(r"^[\d%,.$]+$", token):
             parts.append(token.upper())
     return " ".join(parts)[:32] or "STAT"
+
+
+_STEP_ORDINALS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "first": 1,
+    "second": 2,
+    "third": 3,
+}
+
+
+def _parse_step_number(token: str) -> int | None:
+    norm = normalize(token)
+    if norm in _STEP_ORDINALS:
+        return _STEP_ORDINALS[norm]
+    digits = re.sub(r"[^\d]", "", token)
+    if digits in {"1", "2", "3"}:
+        return int(digits)
+    return None
+
+
+def frame_for_step_number(words: list, step_number: int) -> int | None:
+    """Frame when the step number is spoken (after 'step'), not when 'step' starts."""
+    for i, w in enumerate(words):
+        prev = normalize(words[i - 1].get("word", "")) if i > 0 else ""
+        if prev not in {"step", "steps"}:
+            continue
+        num = _parse_step_number(w.get("word", ""))
+        if num == step_number:
+            return w["start_frame"]
+    return None

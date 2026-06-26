@@ -9,10 +9,11 @@ Fallback: scan transcript for step markers when shots are missing.
 import json
 from pathlib import Path
 
-from src.frame_utils import frame_for_phrase, normalize
+from src.frame_utils import frame_for_phrase, frame_for_step_number, normalize
+from src.pipeline_config import step_sfx_lag_frames
 from src.shot_planner import STEP_PHRASE_ALIASES, _detect_steps, _step_number_token
 
-PUNCH_LEAD_FRAMES = 0  # punch exactly when step is spoken
+PUNCH_LAG_FRAMES = step_sfx_lag_frames()
 
 
 def _beats_from_shots(shot_list: dict) -> list[dict]:
@@ -23,7 +24,7 @@ def _beats_from_shots(shot_list: dict) -> list[dict]:
         params = shot.get("params", {})
         beats.append({
             "step": params.get("step_number", len(beats) + 1),
-            "frame": max(0, shot["start_frame"] + PUNCH_LEAD_FRAMES),
+            "frame": max(0, shot["start_frame"] + PUNCH_LAG_FRAMES),
             "label": params.get("text", ""),
             "source": params.get("source", "shot_list"),
         })
@@ -43,7 +44,7 @@ def _beats_from_transcript(transcript: dict) -> list[dict]:
             continue
         beats.append({
             "step": num,
-            "frame": w["start_frame"],
+            "frame": w["start_frame"] + PUNCH_LAG_FRAMES,
             "label": f"STEP {num}",
             "source": "transcript",
         })
@@ -58,7 +59,7 @@ def _beats_from_transcript(transcript: dict) -> list[dict]:
                 if not any(b["step"] == num for b in beats):
                     beats.append({
                         "step": num,
-                        "frame": frame,
+                        "frame": frame + PUNCH_LAG_FRAMES,
                         "label": f"STEP {num}",
                         "source": "transcript_phrase",
                     })

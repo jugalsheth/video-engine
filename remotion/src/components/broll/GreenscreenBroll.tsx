@@ -1,7 +1,9 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Img,
   OffthreadVideo,
+  interpolate,
   spring,
   staticFile,
   useCurrentFrame,
@@ -14,7 +16,7 @@ import {NeuralNetwork} from './NeuralNetwork';
 import {PhoneMockup} from './PhoneMockup';
 import {SalaryChart} from './SalaryChart';
 import {TerminalWindow} from './TerminalWindow';
-import {MEDIA_CONTAIN_CENTER, SPRING_DEFAULT} from '../../layout';
+import {MEDIA_CONTAIN_CENTER, MEDIA_COVER_CENTER, SPRING_DEFAULT} from '../../layout';
 import type {BrollMoment} from '../../types';
 
 const SVG_MAP: Record<string, React.FC<{durationFrames: number}>> = {
@@ -44,8 +46,38 @@ export const GreenscreenBroll: React.FC<Props> = ({moment}) => {
     durationInFrames: 10,
   });
   const opacity = frame < duration - 10 ? fadeIn : 1 - fadeOut;
+  const kenBurns = interpolate(frame, [0, duration], [1.04, 1.14], {
+    extrapolateRight: 'clamp',
+  });
 
   const SvgComponent = SVG_MAP[moment.type] ?? DataFlowDiagram;
+
+  const topVisual = moment.image_file ? (
+    <Img
+      src={staticFile(moment.image_file)}
+      style={{
+        ...MEDIA_COVER_CENTER,
+        transform: `scale(${kenBurns})`,
+      }}
+    />
+  ) : moment.clip_file ? (
+    <OffthreadVideo
+      src={staticFile(moment.clip_file)}
+      style={MEDIA_CONTAIN_CENTER}
+      muted
+    />
+  ) : (
+    <AbsoluteFill
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+      }}
+    >
+      <SvgComponent durationFrames={duration} />
+    </AbsoluteFill>
+  );
 
   return (
     <AbsoluteFill style={{opacity, pointerEvents: 'none'}}>
@@ -60,24 +92,7 @@ export const GreenscreenBroll: React.FC<Props> = ({moment}) => {
           alignItems: 'center',
         }}
       >
-        {moment.clip_file ? (
-          <OffthreadVideo
-            src={staticFile(moment.clip_file)}
-            style={MEDIA_CONTAIN_CENTER}
-            muted
-          />
-        ) : (
-          <AbsoluteFill
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 24,
-            }}
-          >
-            <SvgComponent durationFrames={duration} />
-          </AbsoluteFill>
-        )}
+        {topVisual}
       </AbsoluteFill>
     </AbsoluteFill>
   );

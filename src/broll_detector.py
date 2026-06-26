@@ -1,16 +1,29 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_char_index, frame_for_phrase, normalize
+from src.conflict_helpers import occupied_ranges, overlaps
+from src.conflict_rules import (
+    composited_layouts,
+    hook_composited_ignore_blocking,
+    hook_frame_limit,
+    load_rules,
+)
+from src.broll_visual_context import enrich_moment_context
+from src.frame_utils import normalize
+from src.trigger_utils import resolve_phrase_frame
 
+_rules = load_rules()
 BROLL_DURATION_FRAMES = 75
-STAGGER_FRAMES = 10
-RATE_LIMIT_FRAMES = 150  # max 1 B-roll per 5 seconds at 30fps
+BROLL_DURATION_AI_FRAMES = 105
+IMMERSIVE_FLASH_FRAMES = 15
+STAGGER_FRAMES = int(_rules.get("broll_stagger_frames", 10))
+RATE_LIMIT_FRAMES = int(_rules.get("broll_rate_limit_frames", 240))
+HOOK_FRAME_LIMIT = hook_frame_limit()
 
 GREENSCREEN_TYPES = {"data_flow", "terminal", "linkedin", "salary", "growth_chart"}
+COMPOSITED_LAYOUTS = composited_layouts()
 
 KEYWORD_GROUPS: dict[str, list[str]] = {
     "salary": [
@@ -42,24 +55,50 @@ SEARCH_QUERIES: dict[str, str] = {
 }
 
 CONFLICT_SHOT_TYPES = {"TITLE_CARD", "CUSTOM_VISUAL"}
-TITLE_END_BUFFER_FRAMES = 12
 
 
-def _occupied_ranges(shot_list: dict) -> list[tuple[int, int, str]]:
-    ranges: list[tuple[int, int, str]] = []
-    for shot in shot_list.get("shots", []):
-        if shot.get("type") in CONFLICT_SHOT_TYPES:
-            end = shot["end_frame"]
-            if shot.get("type") == "TITLE_CARD":
-                end += TITLE_END_BUFFER_FRAMES
-            ranges.append((shot["start_frame"], end, shot["type"]))
-    return ranges
+def _layout_map(script: dict | None) -> dict[str, str]:
+    triggers = (script or {}).get("video_triggers") or {}
+    phrases = triggers.get("broll_phrases") or []
+    layouts = triggers.get("broll_layouts") or []
+    mapping: dict[str, str] = {}
+    for i, phrase in enumerate(phrases):
+        if phrase and i < len(layouts) and layouts[i]:
+            mapping[normalize(phrase)] = str(layouts[i])
+    return mapping
 
 
-def _overlaps(start: int, end: int, ranges: list[tuple[int, int, str]]) -> str | None:
-    for rs, re_, label in ranges:
-        if start < re_ and end > rs:
-            return label
+def _resolve_layout(
+    group_type: str,
+    start_frame: int,
+    phrase: str,
+    script: dict | None,
+) -> str:
+    phrase_norm = normalize(phrase)
+    explicit = _layout_map(script).get(phrase_norm)
+    if explicit in COMPOSITED_LAYOUTS or explicit in {"pip", "greenscreen"}:
+        return explicit
+
+    if group_type in GREENSCREEN_TYPES:
+        if start_frame < HOOK_FRAME_LIMIT and explicit == "immersive_flash":
+            return "immersive_flash"
+        if explicit == "presenter_cutout":
+            return "presenter_cutout"
+        return "presenter_on_bg"
+    return "pip"
+
+
+def _duration_frames(layout: str, group_type: str) -> int:
+    if layout == "immersive_flash":
+        return IMMERSIVE_FLASH_FRAMES
+    if layout in COMPOSITED_LAYOUTS or group_type in GREENSCREEN_TYPES:
+        return BROLL_DURATION_AI_FRAMES
+    return BROLL_DURATION_FRAMES
+
+
+def _conflict_ignore(layout: str, start_frame: int) -> set[str] | None:
+    if layout in COMPOSITED_LAYOUTS and start_frame < HOOK_FRAME_LIMIT:
+        return hook_composited_ignore_blocking()
     return None
 
 
@@ -75,13 +114,15 @@ def _broll_type_for_phrase(phrase: str) -> str:
         return "data_flow"
     if "finance" in norm_phrase or "sales" in norm_phrase:
         return "salary"
-    return "data_flow"
+    # Unknown phrases: keep type generic but caller should use phrase as search_query
+    return "custom"
 
 
 def _seed_script_broll_phrases(
     script: dict | None,
     transcript: dict,
-    occupied: list[tuple[int, int, str]],
+    occupied: list[tuple],
+    skipped: list[dict],
 ) -> tuple[list[dict], set[str], list[tuple[int, int]]]:
     if not script:
         return [], set(), []
@@ -92,28 +133,48 @@ def _seed_script_broll_phrases(
     full_text = transcript.get("full_text", "")
     norm_full = normalize(full_text)
     moments: list[dict] = []
-    seen_types: set[str] = set()
+    seen_phrases: set[str] = set()
     used_spans: list[tuple[int, int]] = []
 
     for phrase in broll_phrases:
         if not phrase:
             continue
         norm_phrase = normalize(phrase)
-        if norm_phrase not in norm_full:
+        if norm_phrase in seen_phrases:
             continue
-        group_type = _broll_type_for_phrase(phrase)
-        if group_type in seen_types:
+        start, match_method = resolve_phrase_frame(words, full_text, phrase)
+        if start is None:
+            skipped.append({
+                "keyword": phrase,
+                "reason": "phrase not in transcript",
+                "source": "script_broll_phrases",
+            })
             continue
         idx = norm_full.find(norm_phrase)
+        if idx == -1:
+            idx = 0
         end_idx = idx + len(norm_phrase)
-        start = frame_for_phrase(words, full_text, phrase) or frame_for_char_index(words, idx)
-        end = start + BROLL_DURATION_FRAMES
-        conflict = _overlaps(start, end, occupied)
+        group_type = _broll_type_for_phrase(phrase)
+        layout = _resolve_layout(group_type, start, phrase, script)
+        duration = _duration_frames(layout, group_type)
+        end = start + duration
+        conflict = overlaps(
+            start,
+            end,
+            occupied,
+            ignore_labels=_conflict_ignore(layout, start),
+            with_labels=True,
+        )
         if conflict:
+            skipped.append({
+                "keyword": phrase,
+                "start_frame": start,
+                "reason": f"conflicts with {conflict}",
+                "source": "script_broll_phrases",
+            })
             continue
-        seen_types.add(group_type)
+        seen_phrases.add(norm_phrase)
         used_spans.append((idx, end_idx))
-        layout = "greenscreen" if group_type in GREENSCREEN_TYPES else "pip"
         moments.append({
             "type": group_type,
             "start_frame": start,
@@ -123,8 +184,9 @@ def _seed_script_broll_phrases(
             "search_query": SEARCH_QUERIES.get(group_type, phrase),
             "layout": layout,
             "source": "script_broll_phrases",
+            "match_method": match_method,
         })
-    return moments, seen_types, used_spans
+    return moments, seen_phrases, used_spans
 
 
 def _step_side_map(script: dict | None) -> dict[int, str]:
@@ -173,7 +235,7 @@ def _pair_broll_to_steps(
         for i, m in enumerate(result):
             if m.get("step_paired"):
                 continue
-            if m.get("layout") == "greenscreen":
+            if m.get("layout") in {"greenscreen", *COMPOSITED_LAYOUTS}:
                 continue
             dist = abs(m["start_frame"] - step_start)
             if dist < best_dist and dist <= 120:
@@ -194,16 +256,18 @@ def _pair_broll_to_steps(
 
 def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dict:
     words = transcript.get("words", [])
-    occupied = _occupied_ranges(shot_list)
+    occupied = occupied_ranges(shot_list, moment_type="broll", with_labels=True)
     moments: list[dict] = []
     skipped: list[dict] = []
 
     if script is None:
         script = shot_list.get("script_metadata")
 
-    full_text = normalize(transcript.get("full_text", ""))
+    full_text = transcript.get("full_text", "")
 
-    seeded, seen_types, used_spans = _seed_script_broll_phrases(script, transcript, occupied)
+    seeded, seen_phrases, used_spans = _seed_script_broll_phrases(
+        script, transcript, occupied, skipped,
+    )
     moments.extend(seeded)
 
     # Phrase-first: longest keywords first
@@ -215,18 +279,30 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
     all_phrases.sort(key=lambda x: len(x[1]), reverse=True)
 
     for group_type, phrase in all_phrases:
-        if group_type in seen_types:
+        norm_phrase = normalize(phrase)
+        if norm_phrase in seen_phrases:
             continue
-        if phrase not in full_text:
+        start, _match_method = resolve_phrase_frame(words, full_text, phrase)
+        if start is None:
             continue
-        idx = full_text.find(phrase)
-        end_idx = idx + len(phrase)
+        norm_full = normalize(full_text)
+        idx = norm_full.find(norm_phrase)
+        if idx == -1:
+            continue
+        end_idx = idx + len(norm_phrase)
         if any(idx < e and end_idx > s for s, e in used_spans):
             continue
 
-        start = frame_for_char_index(words, idx)
-        end = start + BROLL_DURATION_FRAMES
-        conflict = _overlaps(start, end, occupied)
+        layout = _resolve_layout(group_type, start, phrase, script)
+        duration = _duration_frames(layout, group_type)
+        end = start + duration
+        conflict = overlaps(
+            start,
+            end,
+            occupied,
+            ignore_labels=_conflict_ignore(layout, start),
+            with_labels=True,
+        )
         if conflict:
             skipped.append({
                 "type": group_type,
@@ -236,9 +312,8 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
             })
             continue
 
-        seen_types.add(group_type)
+        seen_phrases.add(norm_phrase)
         used_spans.append((idx, end_idx))
-        layout = "greenscreen" if group_type in GREENSCREEN_TYPES else "pip"
         moments.append({
             "type": group_type,
             "start_frame": start,
@@ -250,6 +325,7 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
         })
 
     # Single-word fallback for types not yet matched (min 5 chars, no broad terms)
+    seen_types = {m["type"] for m in moments}
     for group_type, keywords in KEYWORD_GROUPS.items():
         if group_type in seen_types:
             continue
@@ -262,8 +338,16 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
                 continue
 
             start = word_obj["start_frame"]
-            end = start + BROLL_DURATION_FRAMES
-            conflict = _overlaps(start, end, occupied)
+            layout = _resolve_layout(group_type, start, word_obj["word"], script)
+            duration = _duration_frames(layout, group_type)
+            end = start + duration
+            conflict = overlaps(
+                start,
+                end,
+                occupied,
+                ignore_labels=_conflict_ignore(layout, start),
+                with_labels=True,
+            )
             if conflict:
                 skipped.append({
                     "type": group_type,
@@ -274,7 +358,6 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
                 break
 
             seen_types.add(group_type)
-            layout = "greenscreen" if group_type in GREENSCREEN_TYPES else "pip"
             moments.append({
                 "type": group_type,
                 "start_frame": start,
@@ -288,6 +371,18 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
 
     moments.sort(key=lambda m: m["start_frame"])
     moments = _pair_broll_to_steps(moments, shot_list, script)
+
+    for i, m in enumerate(moments):
+        moments[i] = enrich_moment_context(m, transcript, script)
+        brief_src = (script or {}).get("video_triggers") or {}
+        descs = brief_src.get("broll_image_descriptions") or []
+        phrases = brief_src.get("broll_phrases") or []
+        kw = normalize(m.get("keyword", ""))
+        for j, phrase in enumerate(phrases):
+            if phrase and (normalize(phrase) in kw or kw in normalize(phrase)):
+                if j < len(descs) and descs[j]:
+                    moments[i]["visual_brief"] = descs[j]
+                break
 
     # Stagger + rate limit (max 1 per 8 seconds)
     accepted: list[dict] = []

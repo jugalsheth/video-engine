@@ -6,6 +6,7 @@ Reads staged files from remotion/public/ — no input-props.json.
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional, Union
 
 ENGINE_ROOT = Path(__file__).resolve().parent.parent
 REMOTION_DIR = ENGINE_ROOT / "remotion"
@@ -21,16 +22,20 @@ def _verify_staged() -> None:
         raise FileNotFoundError(f"Missing staged files in public/: {missing}")
 
 
-def run(video_path: str, shot_list: dict) -> str:
+def run(video_path: str, shot_list: dict, output_path: Optional[Union[str, Path]] = None) -> str:
     _verify_staged()
-    OUTPUT_DIR.mkdir(exist_ok=True)
     REMOTION_OUT.parent.mkdir(parents=True, exist_ok=True)
 
-    video_stem = Path(video_path).stem
-    safe_title = "".join(
-        c if c.isalnum() or c in "-_" else "_" for c in shot_list.get("video_title", video_stem)
-    )[:60]
-    output_path = OUTPUT_DIR / f"{safe_title}_{video_stem}.mp4"
+    if output_path is None:
+        OUTPUT_DIR.mkdir(exist_ok=True)
+        video_stem = Path(video_path).stem
+        safe_title = "".join(
+            c if c.isalnum() or c in "-_" else "_" for c in shot_list.get("video_title", video_stem)
+        )[:60]
+        output_path = OUTPUT_DIR / f"{safe_title}_{video_stem}.mp4"
+    else:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
     base_cmd = [
         "remotion",

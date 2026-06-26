@@ -4,7 +4,9 @@ import json
 import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_char_index, normalize
+from src.conflict_helpers import occupied_ranges, overlaps
+from src.frame_utils import normalize
+from src.trigger_utils import resolve_phrase_frame
 from src.fun_detector import detect_mood
 from src.rules_loader import load_role_keywords
 
@@ -113,22 +115,15 @@ def _merge_role_keywords() -> dict[str, dict]:
 
 
 def _occupied_ranges(shot_list: dict) -> list[tuple[int, int]]:
-    ranges: list[tuple[int, int]] = []
-    for shot in shot_list.get("shots", []):
-        if shot.get("type") in CONFLICT_SHOT_TYPES:
-            end = shot["end_frame"]
-            if shot.get("type") == "TITLE_CARD":
-                end += TITLE_END_BUFFER_FRAMES
-            ranges.append((shot["start_frame"], end))
-    return ranges
+    return occupied_ranges(shot_list, moment_type="role")
 
 
 def _overlaps(start: int, end: int, ranges: list[tuple[int, int]]) -> bool:
-    return any(start < re_ and end > rs for rs, re_ in ranges)
+    return bool(overlaps(start, end, ranges))
 
 
-def _pick_line(role: str, keyword: str) -> str:
-    rules = ROLE_RULES[role]["lines"]
+def _pick_line(role: str, keyword: str, role_rules: dict | None = None) -> str:
+    rules = (role_rules or _merge_role_keywords())[role]["lines"]
     k = keyword.lower()
     for key, line in rules.items():
         if key != "default" and key in k:
@@ -136,8 +131,8 @@ def _pick_line(role: str, keyword: str) -> str:
     return rules.get("default", keyword.upper()[:18])
 
 
-def _pick_pose(role: str, is_callback: bool) -> str:
-    poses = ROLE_RULES[role]["poses"]
+def _pick_pose(role: str, is_callback: bool, role_rules: dict | None = None) -> str:
+    poses = (role_rules or _merge_role_keywords())[role]["poses"]
     return poses.get("callback", poses["default"]) if is_callback else poses["default"]
 
 
@@ -169,14 +164,10 @@ def detect(transcript: dict, shot_list: dict) -> dict:
     for role, phrase in all_phrases:
         if role in seen_roles:
             continue
-        if phrase not in full_text:
+        start, match_method = resolve_phrase_frame(words, transcript.get("full_text", ""), phrase)
+        if start is None:
+            skipped.append({"role": role, "keyword": phrase, "reason": "phrase not found"})
             continue
-        idx = full_text.find(phrase)
-        end_idx = idx + len(phrase)
-        if any(idx < e and end_idx > s for s, e in used_spans):
-            continue
-
-        start = frame_for_char_index(words, idx)
         end = start + ROLE_DURATION_FRAMES
         if _overlaps(start, end, occupied):
             skipped.append({"role": role, "start_frame": start, "keyword": phrase, "reason": "title conflict"})
@@ -188,8 +179,8 @@ def detect(transcript: dict, shot_list: dict) -> dict:
 
         moment = {
             "role": role,
-            "pose": _pick_pose(role, is_callback),
-            "line": _pick_line(role, phrase),
+            "pose": _pick_pose(role, is_callback, role_rules),
+            "line": _pick_line(role, phrase, role_rules),
             "start_frame": start,
             "end_frame": end,
             "keyword": phrase,
@@ -200,7 +191,7 @@ def detect(transcript: dict, shot_list: dict) -> dict:
         moments.append(moment)
         seen_roles.add(role)
         role_last_frame[role] = start
-        used_spans.append((idx, end_idx))
+        used_spans.append((start, start + ROLE_DURATION_FRAMES))
 
     # Number wins → hype role if not matched
     if "hype" not in seen_roles:

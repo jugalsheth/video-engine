@@ -1,0 +1,20 @@
+{
+  "project_id": "script_05_aws_deployment_mistakes",
+  "script_number": 5,
+  "title": "AWS DEPLOYMENT MISTAKES",
+  "status": "rendered",
+  "raw_filename_original": "raw.mp4",
+  "matched_script_id": "script_05_aws_deployment_mistakes",
+  "created_at": "2026-06-15T00:50:22+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_05_aws_deployment_mistakes/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_05_aws_deployment_mistakes/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_05_aws_deployment_mistakes/assets"
+  },
+  "updated_at": "2026-06-15T00:28:25+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-15T00:53:42+00:00",
+  "render_minutes": 2.4,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0
+}

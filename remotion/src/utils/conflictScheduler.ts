@@ -1,8 +1,14 @@
-import type {BrollMoment, FunMoment, GlobalFxMoment, LogoMoment, RoleMoment, Shot, StepBeat} from '../types';
-
-const BLOCKING_TYPES = new Set(['TITLE_CARD']);
-const TITLE_BUFFER_FRAMES = 12;
-const STEP_WINDOW_BUFFER = 60;
+import type {BrollMoment, FunMoment, GlobalFxMoment, LogoMoment, RoleMoment, Shot, SocialMoment, StepBeat} from '../types';
+import {
+  BROLL_MAX_PER_STEP,
+  BROLL_OVERLAP_DEDUP,
+  STEP_BEAT_FALLBACK_DURATION,
+  STEP_WINDOW_BUFFER,
+  TITLE_BUFFER_FRAMES,
+  TOAST_BLOCKS_PIP_BROLL_ONLY,
+  blockingTypes,
+} from '../config/conflictRules';
+import {isCompositedLayout} from '../utils/brollLayouts';
 
 const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number) =>
   aStart < bEnd && aEnd > bStart;
@@ -24,7 +30,7 @@ export const getStepWindows = (
 
   return stepBeats.map((b) => ({
     start: b.frame - buffer,
-    end: b.frame + buffer + 75,
+    end: b.frame + buffer + STEP_BEAT_FALLBACK_DURATION,
     step: b.step,
   }));
 };
@@ -35,13 +41,9 @@ const overlapsStepWindow = (
   stepWindows: Array<{start: number; end: number}>,
 ): boolean => stepWindows.some((w) => overlaps(start, end, w.start, w.end));
 
-export const filterBrollMoments = (
-  shots: Shot[],
-  brollMoments: BrollMoment[],
-  stepBeats: StepBeat[] = [],
-): BrollMoment[] => {
-  const blocking = shots
-    .filter((s) => BLOCKING_TYPES.has(s.type))
+const shotBlockingRanges = (shots: Shot[], momentType: string) =>
+  shots
+    .filter((s) => blockingTypes(momentType).has(s.type))
     .map((s) => ({
       start: s.start_frame,
       end:
@@ -51,6 +53,12 @@ export const filterBrollMoments = (
       type: s.type,
     }));
 
+export const filterBrollMoments = (
+  shots: Shot[],
+  brollMoments: BrollMoment[],
+  stepBeats: StepBeat[] = [],
+): BrollMoment[] => {
+  const blocking = shotBlockingRanges(shots, 'broll');
   const stepWindows = getStepWindows(shots, stepBeats);
   const accepted: BrollMoment[] = [];
   const stepPairedCount = new Map<number, number>();
@@ -61,14 +69,16 @@ export const filterBrollMoments = (
     );
     if (blocked) continue;
 
-    const brollOverlap = accepted.some((b) =>
-      overlaps(moment.start_frame, moment.end_frame, b.start_frame, b.end_frame),
-    );
-    if (brollOverlap) continue;
+    if (BROLL_OVERLAP_DEDUP) {
+      const brollOverlap = accepted.some((b) =>
+        overlaps(moment.start_frame, moment.end_frame, b.start_frame, b.end_frame),
+      );
+      if (brollOverlap) continue;
+    }
 
     if (moment.step_paired != null) {
       const count = stepPairedCount.get(moment.step_paired) ?? 0;
-      if (count >= 1) continue;
+      if (count >= BROLL_MAX_PER_STEP) continue;
       stepPairedCount.set(moment.step_paired, count + 1);
       accepted.push(moment);
       continue;
@@ -79,7 +89,7 @@ export const filterBrollMoments = (
     );
     if (inStepWindow) {
       const count = stepPairedCount.get(inStepWindow.step) ?? 0;
-      if (count >= 1) continue;
+      if (count >= BROLL_MAX_PER_STEP) continue;
       stepPairedCount.set(inStepWindow.step, count + 1);
     }
 
@@ -89,100 +99,54 @@ export const filterBrollMoments = (
   return accepted;
 };
 
-const FUN_BLOCKING_TYPES = new Set(['TITLE_CARD']);
+const filterWithStepWindows = <T extends {start_frame: number; end_frame: number}>(
+  shots: Shot[],
+  moments: T[],
+  stepBeats: StepBeat[],
+  momentType: string,
+): T[] => {
+  const blocking = shotBlockingRanges(shots, momentType);
+  const stepWindows = getStepWindows(shots, stepBeats);
+  const accepted: T[] = [];
+
+  for (const moment of moments) {
+    const blocked = blocking.some((b) =>
+      overlaps(moment.start_frame, moment.end_frame, b.start, b.end),
+    );
+    if (blocked) continue;
+
+    if (overlapsStepWindow(moment.start_frame, moment.end_frame, stepWindows)) {
+      continue;
+    }
+
+    const overlap = accepted.some((a) =>
+      overlaps(moment.start_frame, moment.end_frame, a.start_frame, a.end_frame),
+    );
+    if (overlap) continue;
+
+    accepted.push(moment);
+  }
+
+  return accepted;
+};
 
 export const filterFunMoments = (
   shots: Shot[],
   funMoments: FunMoment[],
   stepBeats: StepBeat[] = [],
-): FunMoment[] => {
-  const blocking = shots
-    .filter((s) => FUN_BLOCKING_TYPES.has(s.type))
-    .map((s) => ({
-      start: s.start_frame,
-      end:
-        s.type === 'TITLE_CARD'
-          ? s.end_frame + TITLE_BUFFER_FRAMES
-          : s.end_frame,
-    }));
-
-  const stepWindows = getStepWindows(shots, stepBeats);
-  const accepted: FunMoment[] = [];
-
-  for (const moment of funMoments) {
-    const blocked = blocking.some((b) =>
-      overlaps(moment.start_frame, moment.end_frame, b.start, b.end),
-    );
-    if (blocked) continue;
-
-    if (overlapsStepWindow(moment.start_frame, moment.end_frame, stepWindows)) {
-      continue;
-    }
-
-    const overlap = accepted.some((a) =>
-      overlaps(moment.start_frame, moment.end_frame, a.start_frame, a.end_frame),
-    );
-    if (overlap) continue;
-
-    accepted.push(moment);
-  }
-
-  return accepted;
-};
+): FunMoment[] => filterWithStepWindows(shots, funMoments, stepBeats, 'fun');
 
 export const filterRoleMoments = (
   shots: Shot[],
   roleMoments: RoleMoment[],
   stepBeats: StepBeat[] = [],
-): RoleMoment[] => {
-  const blocking = shots
-    .filter((s) => FUN_BLOCKING_TYPES.has(s.type))
-    .map((s) => ({
-      start: s.start_frame,
-      end:
-        s.type === 'TITLE_CARD'
-          ? s.end_frame + TITLE_BUFFER_FRAMES
-          : s.end_frame,
-    }));
-
-  const stepWindows = getStepWindows(shots, stepBeats);
-  const accepted: RoleMoment[] = [];
-
-  for (const moment of roleMoments) {
-    const blocked = blocking.some((b) =>
-      overlaps(moment.start_frame, moment.end_frame, b.start, b.end),
-    );
-    if (blocked) continue;
-
-    if (overlapsStepWindow(moment.start_frame, moment.end_frame, stepWindows)) {
-      continue;
-    }
-
-    const overlap = accepted.some((a) =>
-      overlaps(moment.start_frame, moment.end_frame, a.start_frame, a.end_frame),
-    );
-    if (overlap) continue;
-
-    accepted.push(moment);
-  }
-
-  return accepted;
-};
+): RoleMoment[] => filterWithStepWindows(shots, roleMoments, stepBeats, 'role');
 
 export const filterLogoMoments = (
   shots: Shot[],
   logoMoments: LogoMoment[],
 ): LogoMoment[] => {
-  const blocking = shots
-    .filter((s) => FUN_BLOCKING_TYPES.has(s.type))
-    .map((s) => ({
-      start: s.start_frame,
-      end:
-        s.type === 'TITLE_CARD'
-          ? s.end_frame + TITLE_BUFFER_FRAMES
-          : s.end_frame,
-    }));
-
+  const blocking = shotBlockingRanges(shots, 'logo');
   const accepted: LogoMoment[] = [];
 
   for (const moment of logoMoments) {
@@ -202,6 +166,12 @@ export const filterLogoMoments = (
   return accepted;
 };
 
+export const filterSocialMoments = (
+  shots: Shot[],
+  socialMoments: SocialMoment[],
+  stepBeats: StepBeat[] = [],
+): SocialMoment[] => filterWithStepWindows(shots, socialMoments, stepBeats, 'social');
+
 const momentEnd = (m: GlobalFxMoment): number =>
   m.start_frame + m.duration_frames;
 
@@ -211,7 +181,9 @@ const overlapsBrollPip = (
   brollMoments: BrollMoment[],
 ): boolean =>
   brollMoments.some((b) => {
-    if (b.layout === 'greenscreen') return false;
+    if (TOAST_BLOCKS_PIP_BROLL_ONLY) {
+      if (b.layout === 'greenscreen' || isCompositedLayout(b.layout)) return false;
+    }
     return overlaps(start, end, b.start_frame, b.end_frame);
   });
 

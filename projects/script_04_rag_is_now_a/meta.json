@@ -1,0 +1,23 @@
+{
+  "project_id": "script_04_rag_is_now_a",
+  "script_number": 4,
+  "title": "RAG IS NOW A SENIOR SKILL",
+  "status": "rendered",
+  "raw_filename_original": "raw.mp4",
+  "matched_script_id": "script_04_rag_is_now_a",
+  "created_at": "2026-06-25T00:07:27+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_04_rag_is_now_a/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_04_rag_is_now_a/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_04_rag_is_now_a/assets"
+  },
+  "updated_at": "2026-06-17T20:32:15+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-25T00:10:19+00:00",
+  "render_minutes": 2.3,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0,
+  "ai_image_cost_usd": 0.006,
+  "ai_images_generated": 2,
+  "social_moments_detected": 0
+}

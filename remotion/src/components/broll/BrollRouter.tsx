@@ -6,8 +6,9 @@ import {NeuralNetwork} from './NeuralNetwork';
 import {PhoneMockup} from './PhoneMockup';
 import {SalaryChart} from './SalaryChart';
 import {GreenscreenBroll} from './GreenscreenBroll';
-import {StockVideoBroll} from './StockVideoBroll';
+import {LegacyBrollCard} from './LegacyBrollCard';
 import {TerminalWindow} from './TerminalWindow';
+import {isCompositedMoment} from '../../utils/brollLayouts';
 import type {BrollMoment} from '../../types';
 
 const MAP: Record<string, React.FC<{durationFrames: number}>> = {
@@ -27,11 +28,17 @@ const SvgFallback: React.FC<{moment: BrollMoment}> = ({moment}) => {
 };
 
 export const BrollRouter: React.FC<{moment: BrollMoment}> = ({moment}) => {
+  if (isCompositedMoment(moment)) {
+    return null;
+  }
+  if (moment.image_file && moment.layout !== 'greenscreen') {
+    return <LegacyBrollCard moment={moment} />;
+  }
   if (moment.layout === 'greenscreen') {
     return <GreenscreenBroll moment={moment} />;
   }
   if (moment.clip_file) {
-    return <StockVideoBroll moment={moment} />;
+    return <LegacyBrollCard moment={moment} />;
   }
   return <SvgFallback moment={moment} />;
 };

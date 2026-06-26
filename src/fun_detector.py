@@ -4,7 +4,9 @@ import json
 import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_char_index, frame_for_phrase, normalize
+from src.conflict_helpers import occupied_ranges, overlaps
+from src.frame_utils import normalize
+from src.trigger_utils import resolve_phrase_frame
 from src.lottie_assets import fun_lottie_map
 from src.rules_loader import load_fun_groups
 
@@ -48,18 +50,11 @@ LOTTIE_TYPES = {"confetti", "mind_blown", "money_rain", "fire_spark"}
 
 
 def _occupied_ranges(shot_list: dict) -> list[tuple[int, int]]:
-    ranges: list[tuple[int, int]] = []
-    for shot in shot_list.get("shots", []):
-        if shot.get("type") in CONFLICT_SHOT_TYPES:
-            end = shot["end_frame"]
-            if shot.get("type") == "TITLE_CARD":
-                end += TITLE_END_BUFFER_FRAMES
-            ranges.append((shot["start_frame"], end))
-    return ranges
+    return occupied_ranges(shot_list, moment_type="fun")
 
 
 def _overlaps(start: int, end: int, ranges: list[tuple[int, int]]) -> bool:
-    return any(start < re_ and end > rs for rs, re_ in ranges)
+    return bool(overlaps(start, end, ranges))
 
 
 def detect_mood(transcript: dict) -> str:
@@ -156,13 +151,9 @@ def _seed_script_fun_phrases(
     for phrase in fun_phrases:
         if not phrase:
             continue
-        norm_phrase = normalize(phrase)
-        norm_full = normalize(full_text)
-        if norm_phrase not in norm_full:
+        start, match_method = resolve_phrase_frame(words, full_text, phrase)
+        if start is None:
             continue
-        idx = norm_full.find(norm_phrase)
-        end_idx = idx + len(norm_phrase)
-        start = frame_for_phrase(words, full_text, phrase) or frame_for_char_index(words, idx)
         end = start + FUN_DURATION_FRAMES
         if _overlaps(start, end, occupied):
             continue
@@ -171,7 +162,7 @@ def _seed_script_fun_phrases(
         side = "left" if side_toggle % 2 == 0 else "right"
         side_toggle += 1
         moments.append(_build_moment(fun_type, phrase, start, mood, side, word_obj))
-        used_spans.append((idx, end_idx))
+        used_spans.append((start, start + FUN_DURATION_FRAMES))
 
     return moments, used_spans, side_toggle
 
@@ -215,14 +206,12 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
             continue
         if type_counts.get(fun_type, 0) >= 2:
             continue
-        if phrase not in full_text:
+        start, match_method = resolve_phrase_frame(words, full_text, phrase)
+        if start is None:
+            skipped.append({"type": fun_type, "keyword": phrase, "reason": "phrase not found"})
             continue
-        idx = full_text.find(phrase)
-        end_idx = idx + len(phrase)
-        if any(idx < e and end_idx > s for s, e in used_spans):
+        if any(start < e and start + FUN_DURATION_FRAMES > s for s, e in used_spans):
             continue
-
-        start = frame_for_char_index(words, idx)
         end = start + FUN_DURATION_FRAMES
         if _overlaps(start, end, occupied):
             skipped.append({"type": fun_type, "start_frame": start, "keyword": phrase, "reason": "shot conflict"})
@@ -234,7 +223,7 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
 
         moments.append(_build_moment(fun_type, phrase, start, mood, side, word_obj))
         type_counts[fun_type] = type_counts.get(fun_type, 0) + 1
-        used_spans.append((idx, end_idx))
+        used_spans.append((start, start + FUN_DURATION_FRAMES))
 
     # Stat moments → comic pop (pairs with STAT_CALLOUT shots)
     for shot in shot_list.get("shots", []):

@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 from faster_whisper import WhisperModel
 
@@ -26,7 +27,7 @@ def _punctuate(full_text: str) -> str:
     return text
 
 
-def run(video_path: str) -> dict:
+def run(video_path: str, transcript_dest: Optional[Path] = None) -> dict:
     """
     Transcribes video and returns structured transcript
     with word-level frame numbers.
@@ -87,8 +88,8 @@ def run(video_path: str) -> dict:
         "fps": FPS,
     }
 
-    transcript_path = video_path.parent / f"{video_path.stem}_transcript.json"
-    transcript_path.write_text(json.dumps(transcript, indent=2))
+    sidecar = transcript_dest or (video_path.parent / f"{video_path.stem}_transcript.json")
+    sidecar.write_text(json.dumps(transcript, indent=2))
 
     audio_path.unlink(missing_ok=True)
 

@@ -4,7 +4,9 @@ import json
 import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_char_index, frame_for_phrase, normalize
+from src.conflict_helpers import occupied_ranges, overlaps
+from src.frame_utils import normalize
+from src.trigger_utils import resolve_phrase_frame
 from src.rules_loader import load_global_fx_map
 from src.pipeline_config import global_fx_enabled
 
@@ -59,9 +61,9 @@ def _detect_phrase_moments(
         idx, end_idx = span
         if any(idx < e and end_idx > s for s, e in used_spans):
             continue
-        start = frame_for_phrase(words, transcript.get("full_text", ""), phrase)
+        start, _method = resolve_phrase_frame(words, transcript.get("full_text", ""), phrase)
         if start is None:
-            start = frame_for_char_index(words, idx)
+            continue
         moment: dict = {
             "type": fx_type,
             "start_frame": start,
@@ -130,7 +132,7 @@ def _vhs_segments(
         phrase = vm.get("at_phrase") or vm.get("phrase") or ""
         if not phrase:
             continue
-        start = frame_for_phrase(words, transcript.get("full_text", ""), phrase)
+        start, _method = resolve_phrase_frame(words, transcript.get("full_text", ""), phrase)
         if start is None:
             continue
         if vm_type in ("before", "before_segment", "old_way"):
@@ -146,9 +148,9 @@ def _vhs_segments(
         span = _phrase_in_text(phrase, full_text)
         if span is None:
             continue
-        start = frame_for_phrase(words, transcript.get("full_text", ""), phrase)
+        start, _method = resolve_phrase_frame(words, transcript.get("full_text", ""), phrase)
         if start is None:
-            start = frame_for_char_index(words, span[0])
+            continue
         if not any(s["kind"] == "before" and abs(s["start_frame"] - start) < 30 for s in segments):
             segments.append({"kind": "before", "start_frame": start, "phrase": phrase})
 
@@ -156,9 +158,9 @@ def _vhs_segments(
         span = _phrase_in_text(phrase, full_text)
         if span is None:
             continue
-        start = frame_for_phrase(words, transcript.get("full_text", ""), phrase)
+        start, _method = resolve_phrase_frame(words, transcript.get("full_text", ""), phrase)
         if start is None:
-            start = frame_for_char_index(words, span[0])
+            continue
         if not any(s["kind"] == "after" and abs(s["start_frame"] - start) < 30 for s in segments):
             segments.append({"kind": "after", "start_frame": start, "phrase": phrase})
 
@@ -280,7 +282,10 @@ def detect(
             skipped.append({"type": fx_type, "trigger_phrase": phrase, "reason": "phrase not in transcript"})
             continue
         words = transcript.get("words", [])
-        start = frame_for_phrase(words, full_text, phrase) or frame_for_char_index(words, span[0])
+        start, _method = resolve_phrase_frame(words, full_text, phrase)
+        if start is None:
+            skipped.append({"type": fx_type, "trigger_phrase": phrase, "reason": "phrase not in transcript"})
+            continue
         if any(m["type"] == fx_type and m["start_frame"] == start for m in moments):
             continue
         moment = {

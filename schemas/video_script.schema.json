@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CreatorAutoVideoScript",
+  "type": "object",
+  "required": ["spoken_script"],
+  "properties": {
+    "spoken_script": { "type": "string", "minLength": 1 },
+    "filename_hint": { "type": "string" },
+    "title_overlay": { "type": "string" },
+    "video_triggers": {
+      "type": "object",
+      "properties": {
+        "broll_phrases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "broll_layouts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pip",
+              "greenscreen",
+              "presenter_on_bg",
+              "presenter_cutout",
+              "immersive_flash"
+            ]
+          }
+        },
+        "broll_image_descriptions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 8 }
+        },
+        "fun_phrases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "logo_phrases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phrase", "brand"],
+            "properties": {
+              "phrase": { "type": "string" },
+              "brand": { "type": "string" }
+            }
+          }
+        },
+        "global_fx_phrases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "beat_phrases": {
+          "type": "object",
+          "properties": {
+            "crust": { "type": "string" },
+            "payoff": { "type": "string" }
+          }
+        }
+      }
+    },
+    "visual_moments": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "video_triggers": {
+            "type": "object",
+            "required": ["broll_phrases"],
+            "properties": {
+              "broll_phrases": { "type": "array", "minItems": 1 }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "video_triggers": {
+            "required": ["broll_phrases", "broll_image_descriptions", "broll_layouts"],
+            "properties": {
+              "broll_phrases": { "type": "array", "minItems": 1 },
+              "broll_image_descriptions": {
+                "type": "array",
+                "minItems": 1
+              },
+              "broll_layouts": { "type": "array", "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "free model": "Pricing tier UI metaphor: FREE vs PAID columns, $0 badge, dark teal interface, no people",
+  "free tier": "Subscription tiers graphic with highlighted free plan, dark UI, amber accent, no people",
+  "free tiers": "Multiple pricing cards with free tier emphasized, dark cinematic UI, no faces",
+  "premium model": "Premium reasoning visual: architecture blueprint with glowing nodes, dark bg, no people",
+  "generative ai": "Abstract adoption wave with neural nodes spreading globally, dark cinematic, no people",
+  "microservices": "Modular service blocks connected by glowing lines, system diagram, dark bg, no people",
+  "token usage": "Futuristic token meter dashboard with data streams, dark teal UI, no people",
+  "data pipeline": "ETL flow diagram with warehouse nodes, dark cinematic, no people",
+  "machine learning": "Neural network abstract visualization, nodes and edges, dark bg, no people",
+  "openai": "Abstract API gateway visualization, glowing endpoints, dark UI, no logos or text",
+  "cursor": "Dark IDE workspace with glowing code editor, moody teal lighting, no faces",
+  "claude": "Planning interface with floating sticky notes, brainstorm mood, dark background, no people"
+}

@@ -1,0 +1,20 @@
+{
+  "project_id": "script_03_aifluent_data_engineers",
+  "script_number": 3,
+  "title": "AI-FLUENT DATA ENGINEERS",
+  "status": "rendered",
+  "raw_filename_original": "raw.mp4",
+  "matched_script_id": "script_03_aifluent_data_engineers",
+  "created_at": "2026-06-15T00:46:47+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_03_aifluent_data_engineers/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_03_aifluent_data_engineers/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_03_aifluent_data_engineers/assets"
+  },
+  "updated_at": "2026-06-15T00:23:51+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-15T00:49:49+00:00",
+  "render_minutes": 2.4,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0
+}

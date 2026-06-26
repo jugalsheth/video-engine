@@ -1,5 +1,6 @@
 import React, {useMemo} from 'react';
 import {Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {isCompositedMoment} from '../utils/brollLayouts';
 import type {BrollMoment, FunMoment, RoleMoment, Shot, StepBeat, Transcript} from '../types';
 
 type MusicConfig = {
@@ -114,7 +115,7 @@ export const AudioLayer: React.FC<Props> = ({
       {punchBeats.map((beat) => (
         <Sequence
           key={`step-swoosh-${beat.frame}-${beat.step}`}
-          from={beat.frame + 2}
+          from={beat.frame + 3}
           durationInFrames={14}
         >
           <Audio src={staticFile('sfx/swoosh.wav')} volume={0.28} />
@@ -125,15 +126,28 @@ export const AudioLayer: React.FC<Props> = ({
           <Audio src={staticFile('sfx/tick.wav')} volume={0.1} />
         </Sequence>
       ))}
-      {brollMoments.map((m) => (
-        <Sequence
-          key={`swoosh-${m.start_frame}`}
-          from={m.start_frame}
-          durationInFrames={Math.min(30, fps)}
-        >
-          <Audio src={staticFile('sfx/swoosh.wav')} volume={0.22} />
-        </Sequence>
-      ))}
+      {brollMoments.map((m) => {
+        const duration = m.end_frame - m.start_frame;
+        const composited = isCompositedMoment(m);
+        return (
+          <React.Fragment key={`broll-sfx-${m.start_frame}`}>
+            <Sequence from={m.start_frame} durationInFrames={Math.min(30, fps)}>
+              <Audio
+                src={staticFile('sfx/swoosh.wav')}
+                volume={composited ? 0.28 : 0.22}
+              />
+            </Sequence>
+            {composited ? (
+              <Sequence
+                from={Math.max(m.start_frame, m.end_frame - 6)}
+                durationInFrames={4}
+              >
+                <Audio src={staticFile('sfx/tick.wav')} volume={0.12} />
+              </Sequence>
+            ) : null}
+          </React.Fragment>
+        );
+      })}
       {funMoments.map((m) => {
         const sfx =
           m.type === 'confetti' || m.type === 'mind_blown' || m.type === 'comic_sfx'

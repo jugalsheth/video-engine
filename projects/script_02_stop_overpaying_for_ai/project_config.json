@@ -1,0 +1,22 @@
+{
+  "video_triggers": {
+    "broll_phrases": [
+      "generative AI",
+      "free model",
+      "premium model",
+      "microservices"
+    ],
+    "broll_layouts": [
+      "presenter_on_bg",
+      "presenter_on_bg",
+      "presenter_on_bg",
+      "presenter_on_bg"
+    ],
+    "broll_image_descriptions": [
+      "Abstract adoption wave with neural nodes spreading globally, dark cinematic background, no people",
+      "Pricing tier UI metaphor: FREE vs PAID columns with $0 badge, dark teal interface, no faces",
+      "Premium reasoning visual: architecture blueprint with glowing nodes, dark background, no people",
+      "Microservices diagram: modular blocks connected by glowing lines, dark cinematic, no people"
+    ]
+  }
+}

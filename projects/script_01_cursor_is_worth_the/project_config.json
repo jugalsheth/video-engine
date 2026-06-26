@@ -1,0 +1,100 @@
+{
+  "pipeline": {
+    "jump_cuts": true,
+    "broll_mode": "ai",
+    "voice_enhance": true,
+    "ai_images": true,
+    "caption_vertical_position": 75
+  },
+  "visual_moments": [
+    {
+      "at_phrase": "that is wild",
+      "type": "headline",
+      "source": "FORBES / TECHCRUNCH",
+      "headline": "SPACEX TO ACQUIRE CURSOR",
+      "subheadline": "Reported $60B valuation — design beats model"
+    },
+    {
+      "at_phrase": "sixty billion dollars",
+      "graphic": "$60B",
+      "label": "SPACEX ACQUIRES CURSOR",
+      "type": "stat",
+      "side": "right"
+    },
+    {
+      "at_phrase": "step one",
+      "graphic": "1",
+      "label": "NOTICE WHAT YOU NEVER NOTICE",
+      "type": "step",
+      "side": "left"
+    },
+    {
+      "at_phrase": "step two",
+      "graphic": "2",
+      "label": "STEAL THAT PRINCIPLE",
+      "type": "step",
+      "side": "left"
+    },
+    {
+      "at_phrase": "step three",
+      "graphic": "3",
+      "label": "SPLIT PLAN FROM SHIP",
+      "type": "step",
+      "side": "left"
+    }
+  ],
+  "video_triggers": {
+    "stat_phrases": [
+      {
+        "phrase": "sixty billion dollars",
+        "display": "$60B",
+        "label": "SPACEX ACQUIRES CURSOR — Forbes/TechCrunch"
+      }
+    ],
+    "fun_phrases": [
+      "that is wild",
+      "the secret",
+      "pure building"
+    ],
+    "energy_words": [
+      "right",
+      "intentional",
+      "wins"
+    ],
+    "broll_phrases": [
+      "overspent on cursor",
+      "token usage",
+      "execute in cursor",
+      "plan in claude",
+      "sixty billion"
+    ],
+    "broll_layouts": [
+      "presenter_cutout",
+      "presenter_on_bg",
+      "presenter_on_bg",
+      "presenter_on_bg",
+      "immersive_flash"
+    ],
+    "broll_image_descriptions": [
+      "Dark cinematic Cursor IDE workspace, glowing code editor, moody teal and amber lighting",
+      "Futuristic server room with token meters and data streams, vertical frame",
+      "Split-screen vibe: Cursor IDE execution panel with shipping metaphor, dramatic light",
+      "Claude planning interface abstracted, brainstorm sticky notes floating, dark background",
+      "Epic rocket launch merging with software UI, high contrast scroll-stopping vertical scene"
+    ],
+    "logo_phrases": [
+      {
+        "phrase": "execute in cursor",
+        "brand": "cursor"
+      },
+      {
+        "phrase": "plan in claude",
+        "brand": "anthropic"
+      }
+    ],
+    "beat_phrases": {
+      "crust": "that is wild",
+      "payoff": "the reason a sixty billion dollar product wins is not the model"
+    }
+  }
+}

@@ -1,7 +1,9 @@
 import React, {useMemo} from 'react';
 import {AbsoluteFill, Sequence} from 'remotion';
+import {SourceVoice} from './components/SourceVoice';
 import {AudioLayer} from './components/AudioLayer';
 import {BrollRouter} from './components/broll/BrollRouter';
+import {CompositedBrollLayer} from './components/broll/CompositedBrollLayer';
 import {CaptionLayer} from './components/CaptionLayer';
 import {StatCallout} from './components/StatCallout';
 import {CustomVisual} from './components/CustomVisual';
@@ -24,6 +26,7 @@ import {VHSFilter} from './components/globalFx/VHSFilter';
 import {ScreenShake} from './components/globalFx/ScreenShake';
 import {FreezeStampOverlay} from './components/globalFx/FreezeStampOverlay';
 import {GlobalFxRouter} from './components/globalFx/GlobalFxRouter';
+import {SocialRouter} from './components/social/SocialRouter';
 import {SplitWipe} from './components/globalFx/SplitWipe';
 import {VideoFreezeWrap} from './components/globalFx/VideoFreezeWrap';
 import {OverlayScaleContext} from './OverlayScaleContext';
@@ -33,7 +36,9 @@ import {
   filterGlobalFxMoments,
   filterLogoMoments,
   filterRoleMoments,
+  filterSocialMoments,
 } from './utils/conflictScheduler';
+import {isCompositedMoment} from './utils/brollLayouts';
 import type {Shot, Transcript, VideoProps} from './types';
 
 const normalizeToken = (w: string) => w.toLowerCase().replace(/[^a-z0-9']/g, '');
@@ -74,7 +79,8 @@ const ShotLayer: React.FC<{
   plantFrame?: number;
   wordHighlightFrames?: Set<number>;
   stepBeats?: VideoProps['stepBeats']['beats'];
-}> = ({shot, props, closerStartFrame, payoffFrame, plantFrame, wordHighlightFrames, stepBeats = []}) => {
+  brollMoments?: VideoProps['brollMoments']['moments'];
+}> = ({shot, props, closerStartFrame, payoffFrame, plantFrame, wordHighlightFrames, stepBeats = [], brollMoments = []}) => {
   const params = shot.params;
   switch (shot.type) {
     case 'TITLE_CARD':
@@ -98,6 +104,7 @@ const ShotLayer: React.FC<{
           wordHighlightFrames={wordHighlightFrames}
           stepBeats={stepBeats}
           energyWords={props.energyWords}
+          brollMoments={brollMoments}
         />
       );
     case 'STAT_CALLOUT':
@@ -115,6 +122,8 @@ const ShotLayer: React.FC<{
           description={(params.description as string) ?? ''}
           assetPath={(params.asset_path as string) ?? 'custom_assets/'}
           assetStatus={(params.asset_status as string) ?? 'needs_creation'}
+          assetFilename={(params.asset_filename as string) ?? ''}
+          layout={(params.layout as 'hero' | 'corner') ?? 'hero'}
         />
       );
     default:
@@ -135,6 +144,7 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
     graphicsScale,
     videoBeats,
     globalFxMoments,
+    socialMoments,
     glitchIntensity = 0.6,
     shakeIntensity = 2,
     freezeStampEnabled = false,
@@ -176,6 +186,11 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
     [shots, brollMoments, stepBeatList],
   );
 
+  const legacyBroll = useMemo(
+    () => acceptedBroll.filter((m) => !isCompositedMoment(m)),
+    [acceptedBroll],
+  );
+
   const acceptedFun = useMemo(
     () => filterFunMoments(shots, funMoments?.moments ?? [], stepBeatList),
     [shots, funMoments, stepBeatList],
@@ -189,6 +204,11 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
   const acceptedLogos = useMemo(
     () => filterLogoMoments(shots, logoMoments?.moments ?? []),
     [shots, logoMoments],
+  );
+
+  const acceptedSocial = useMemo(
+    () => filterSocialMoments(shots, socialMoments?.moments ?? [], stepBeatList),
+    [shots, socialMoments, stepBeatList],
   );
 
   const acceptedGlobalFx = useMemo(() => {
@@ -240,6 +260,7 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
     <OverlayScaleContext.Provider value={graphicsScale}>
     <ScreenShake moments={acceptedGlobalFx} defaultIntensity={shakeIntensity}>
     <AbsoluteFill style={{backgroundColor: '#0C0B09'}}>
+      <SourceVoice />
       <ZoomHook
         zoomIntensity={hookIntensity}
         closerStartFrame={closerStartFrame}
@@ -255,6 +276,8 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         ) : (
           videoContent
         )}
+        <CompositedBrollLayer moments={acceptedBroll} />
+        <CrustFlash crustStartFrame={videoBeats?.crust_start ?? 120} />
       </ZoomHook>
 
       <PostFX stepBeats={stepBeatList} />
@@ -265,7 +288,6 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
         </Sequence>
       )}
 
-      <CrustFlash crustStartFrame={videoBeats?.crust_start ?? 120} />
       <StepPunch beats={stepBeatList} />
       <StepNumberFlash beats={stepBeatList} />
 
@@ -316,12 +338,13 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
               plantFrame={plantFrame}
               wordHighlightFrames={wordHighlightFrames}
               stepBeats={stepBeatList}
+              brollMoments={acceptedBroll}
             />
           </Sequence>
         );
       })}
 
-      {acceptedBroll.map((moment) => (
+      {legacyBroll.map((moment) => (
         <Sequence
           key={`broll-${moment.start_frame}-${moment.type}`}
           from={moment.start_frame}
@@ -367,6 +390,17 @@ export const VideoComposition: React.FC<VideoProps> = (props) => {
             durationFrames={moment.end_frame - moment.start_frame}
             side={moment.side ?? 'right'}
           />
+        </Sequence>
+      ))}
+
+      {acceptedSocial.map((moment) => (
+        <Sequence
+          key={`social-${moment.start_frame}-${moment.type}`}
+          from={moment.start_frame}
+          durationInFrames={moment.end_frame - moment.start_frame}
+          layout="none"
+        >
+          <SocialRouter moment={moment} />
         </Sequence>
       ))}
 

@@ -4,9 +4,10 @@ import json
 import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_char_index, frame_for_phrase, normalize
+from src.frame_utils import normalize
 from src.rules_loader import load_logo_map
-from src.shot_planner import _flex_frame
+from src.conflict_helpers import occupied_ranges, overlaps
+from src.trigger_utils import resolve_phrase_frame
 
 LOGO_DURATION_FRAMES = 36  # 1.2s
 RATE_LIMIT_FRAMES = 54  # 1.8s
@@ -35,27 +36,8 @@ BROLL_BRAND_HINTS: dict[str, str] = {
 }
 
 
-def _occupied_ranges(shot_list: dict) -> list[tuple[int, int]]:
-    ranges: list[tuple[int, int]] = []
-    for shot in shot_list.get("shots", []):
-        if shot.get("type") in CONFLICT_SHOT_TYPES:
-            end = shot["end_frame"]
-            if shot.get("type") == "TITLE_CARD":
-                end += TITLE_END_BUFFER_FRAMES
-            ranges.append((shot["start_frame"], end))
-    return ranges
-
-
-def _overlaps(start: int, end: int, ranges: list[tuple[int, int]]) -> bool:
-    return any(start < re_ and end > rs for rs, re_ in ranges)
-
-
 def _tokenize(text: str) -> str:
     return normalize(text)
-
-
-def _collapse(text: str) -> str:
-    return _tokenize(text).replace(" ", "")
 
 
 def _build_alias_index(logo_map: dict) -> list[tuple[str, str, str]]:
@@ -71,49 +53,9 @@ def _build_alias_index(logo_map: dict) -> list[tuple[str, str, str]]:
     return entries
 
 
-def _find_phrase_in_text(full_text: str, alias: str) -> int | None:
-    norm_full = _tokenize(full_text)
-    norm_alias = _tokenize(alias)
-    idx = norm_full.find(norm_alias)
-    if idx != -1:
-        return idx
-    collapsed_full = _collapse(full_text)
-    collapsed_alias = _collapse(alias)
-    if len(collapsed_alias) >= MIN_TOKEN_LEN:
-        cidx = collapsed_full.find(collapsed_alias)
-        if cidx != -1:
-            return cidx
-    return None
-
-
-def _find_alias_word_window(words: list, alias: str) -> int | None:
-    """Match alias across split Whisper tokens (e.g. open + ai → openai)."""
-    collapsed_alias = _collapse(alias)
-    if len(collapsed_alias) < MIN_TOKEN_LEN:
-        return None
-    max_window = min(6, len(collapsed_alias) + 2)
-    for i in range(len(words)):
-        chunk = ""
-        for j in range(i, min(i + max_window, len(words))):
-            chunk += _collapse(words[j].get("word", ""))
-            if collapsed_alias in chunk:
-                return words[i]["start_frame"]
-            if len(chunk) > len(collapsed_alias) + 8:
-                break
-    return None
-
-
 def _resolve_start_frame(words: list, full_text: str, phrase: str) -> int | None:
-    frame = _flex_frame(words, full_text, phrase)
-    if frame is not None:
-        return frame
-    frame = frame_for_phrase(words, full_text, phrase)
-    if frame is not None:
-        return frame
-    idx = _find_phrase_in_text(full_text, phrase)
-    if idx is not None:
-        return frame_for_char_index(words, idx)
-    return _find_alias_word_window(words, phrase)
+    frame, _method = resolve_phrase_frame(words, full_text, phrase)
+    return frame
 
 
 def _append_moment(
@@ -132,10 +74,12 @@ def _append_moment(
     if not meta or brand_id in used_brands:
         return side_toggle
     end = start + LOGO_DURATION_FRAMES
-    if _overlaps(start, end, occupied):
+    if overlaps(start, end, occupied):
         return side_toggle
-    idx = _find_phrase_in_text(full_text, keyword)
-    span = (idx or 0, (idx or 0) + len(_tokenize(keyword)))
+    norm_kw = _tokenize(keyword)
+    norm_full = _tokenize(full_text)
+    idx = norm_full.find(norm_kw)
+    span = (idx if idx != -1 else 0, (idx if idx != -1 else 0) + len(norm_kw))
     if any(span[0] < e and span[1] > s for s, e in used_spans):
         return side_toggle
     side = "left" if side_toggle % 2 == 0 else "right"
@@ -212,7 +156,7 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
 
     words = transcript.get("words", [])
     full_text = transcript.get("full_text", "")
-    occupied = _occupied_ranges(shot_list)
+    occupied = occupied_ranges(shot_list, moment_type="logo")
 
     if script is None:
         script = shot_list.get("script_metadata")
@@ -235,13 +179,11 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
         start = _resolve_start_frame(words, full_text, alias)
         if start is None:
             continue
-        idx = _find_phrase_in_text(full_text, alias)
-        end_idx = (idx or 0) + len(_tokenize(alias))
-        if any((idx or 0) < e and end_idx > s for s, e in used_spans):
+        if any(start < e and start + LOGO_DURATION_FRAMES > s for s, e in used_spans):
             continue
 
         end = start + LOGO_DURATION_FRAMES
-        if _overlaps(start, end, occupied):
+        if overlaps(start, end, occupied):
             skipped.append({
                 "brand": brand_id,
                 "start_frame": start,
@@ -264,7 +206,7 @@ def detect(transcript: dict, shot_list: dict, script: dict | None = None) -> dic
             "side": side,
         })
         used_brands.add(brand_id)
-        used_spans.append(((idx or 0), end_idx))
+        used_spans.append((start, start + LOGO_DURATION_FRAMES))
 
     moments.sort(key=lambda m: m["start_frame"])
 

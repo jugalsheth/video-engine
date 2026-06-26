@@ -1,5 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {ZoomScaleProvider} from '../ZoomScaleContext';
 import {SPRING_SNAP} from '../layout';
 import type {StepBeat, VideoBeats} from '../types';
 
@@ -106,13 +107,15 @@ export const ZoomHook: React.FC<Props> = ({
   scale += stepBoost;
 
   return (
-    <AbsoluteFill
-      style={{
-        transform: `scale(${scale})`,
-        transformOrigin: 'center 38%',
-      }}
-    >
-      {children}
-    </AbsoluteFill>
+    <ZoomScaleProvider scale={scale}>
+      <AbsoluteFill
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center 38%',
+        }}
+      >
+        {children}
+      </AbsoluteFill>
+    </ZoomScaleProvider>
   );
 };

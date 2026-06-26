@@ -77,6 +77,8 @@ SCRIPTS_ARCHIVE_URL=https://raw.githubusercontent.com/jugalsheth/script-engine/m
 | Ad-lib video | **Deterministic** `shot_planner.py` | Default |
 | Ad-lib + `USE_DESIGN_AGENT=true` | **AI** Claude Sonnet | Optional creative override |
 | B-roll / fun / roles / beats | **Deterministic** keyword detectors | Always |
+| AI topical B-roll | **fal.ai** FLUX/Nano Banana (opt-in) | `AI_IMAGES=true` + `FAL_KEY` |
+| Viral formats (tweet/headline/chat) | **Remotion** native components | `visual_moments` type |
 | Transcription | **Local** faster-whisper | Always ($0) |
 | Jump cuts | **Deterministic** ffmpeg silencedetect | `JUMP_CUTS=true` |
 
@@ -86,21 +88,44 @@ The pipeline also loads `../.env` from the parent `CretorAuto/` folder if presen
 
 ## Usage
 
-### Trial run (single file)
+Each video lives in one project folder under `projects/{name}/` with `raw.mp4`, optional `assets/`, and `final.mp4`.
+
+### Record and render (automatic)
 
 ```bash
 cd video-engine
 source .venv/bin/activate
-python watch.py --file raw_videos/your_video.mp4
-```
-
-### Watch folder (automatic)
-
-```bash
 python watch.py
 ```
 
-Drop MP4 files into `raw_videos/`. Finished videos appear in `ready_to_post/`.
+1. Drop your MP4 into `inbox/` (name it like `script_03_kafka_hiring.mp4` to match the script)
+2. Pipeline runs automatically — Whisper, overlays, Remotion render
+3. Collect `projects/{name}/final.mp4` + Telegram caption
+
+### Single file or re-render
+
+```bash
+python watch.py --file inbox/script_03_kafka_hiring.mp4
+python watch.py --project script_03_kafka_hiring   # re-render existing raw.mp4
+```
+
+### Custom PNGs (optional)
+
+Drop images into `projects/{name}/assets/` before or after recording. Name by trigger phrase slug, e.g. `deduplication_happened.png`. No JSON edits — the pipeline auto-detects and inserts at the spoken trigger moment.
+
+### Check status
+
+```bash
+python status.py
+```
+
+### Migrate legacy flat folders
+
+If you still have files in `raw_videos/` and `ready_to_post/`:
+
+```bash
+python migrate_projects.py --apply
+```
 
 ## Pipeline steps
 
@@ -132,7 +157,21 @@ Edit `rules/design_rules.txt` — brand colors, caption style, stat callouts, st
 
 ### Stock B-roll
 
-`src/broll_detector.py` detects keyword moments; `src/fetch_broll.py` downloads portrait clips from Pexels (primary) or Pixabay (fallback). Search queries are defined in `rules/broll_search_map.txt`. SVG diagrams are used when API keys are missing or fetch fails.
+`src/broll_detector.py` detects keyword moments; `src/fetch_broll.py` downloads portrait clips from Pexels (primary) or Pixabay (fallback). With `BROLL_MODE=ai` and `FAL_KEY`, `src/ai_image_gen.py` generates topical stills via fal.ai and animates them in Remotion (Ken Burns). Search queries are defined in `rules/broll_search_map.txt`. SVG diagrams are used when API keys are missing or fetch fails.
+
+### Viral social overlays
+
+`src/social_detector.py` reads `visual_moments` with types `tweet`, `headline`, `chat`, or `reaction` and renders native Remotion components. Override per-project via `projects/{id}/project_config.json` → `social_moments` array.
+
+### AI image env vars
+
+| Var | Default | Effect |
+|-----|---------|--------|
+| `FAL_KEY` | — | fal.ai API key (required for AI images) |
+| `AI_IMAGES` | `false` | Enable AI generation in zero-cost mode |
+| `AI_IMAGE_MODEL` | `flux-schnell` | `flux-schnell`, `nano-banana`, or `recraft` |
+| `AI_IMAGE_MAX_PER_VIDEO` | `8` | Budget cap per render |
+| `BROLL_MODE` | `svg` (zero-cost) | `svg`, `auto`, `ai` |
 
 ### Remotion Studio sliders
 
@@ -150,11 +189,13 @@ Edit `rules/design_rules.txt` — brand colors, caption style, stat callouts, st
 |------|------|
 | faster-whisper transcription | Free (local CPU) |
 | Pexels / Pixabay API | Free |
+| fal.ai AI images (opt-in) | ~$0.02–0.25/video (cached re-renders free) |
 | SFX / music (CC0) | Free |
 | Claude design agent | ~$0.01 |
 | Remotion render | Free (local) |
 | Telegram | Free |
-| **Total** | **~$0.01/video** |
+| **Total (default)** | **$0/video** |
+| **Total (AI images on)** | **~$0.02–0.25/video** |
 
 ## Project structure
 

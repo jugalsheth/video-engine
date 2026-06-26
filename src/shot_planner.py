@@ -8,7 +8,7 @@ Uses script visual_moments + video_triggers when matched; transcript regex other
 import re
 from pathlib import Path
 
-from src.frame_utils import frame_for_phrase, fuzzy_frame_for_phrase, normalize, words_after_number
+from src.frame_utils import frame_for_phrase, frame_for_step_number, fuzzy_frame_for_phrase, normalize, words_after_number
 from src.template_loader import resolve_template
 
 TITLE_HOOK_FRAMES = 45
@@ -328,14 +328,17 @@ def _steps_from_visual_moments(script: dict, transcript: dict) -> list[dict]:
         phrase = moment.get("at_phrase", "")
         if not phrase:
             continue
-        frame = _flex_frame(words, full_text, phrase, min_frame=min_frame, allow_fuzzy=False)
-        if frame is None:
-            continue
-        min_frame = frame + 30
         graphic = str(moment.get("graphic", "")).strip()
         num = len(steps) + 1
         if graphic.isdigit():
             num = int(graphic)
+        frame = _flex_frame(words, full_text, phrase, min_frame=min_frame, allow_fuzzy=False)
+        if frame is None:
+            continue
+        num_frame = frame_for_step_number(words, num)
+        if num_frame is not None and num_frame >= min_frame:
+            frame = num_frame
+        min_frame = frame + 30
         label = str(moment.get("label", f"STEP {num}")).upper()
         steps.append({
             "type": "STEP_REVEAL",
@@ -450,7 +453,7 @@ def _resolve_script_stats(script: dict, transcript: dict) -> list[dict]:
     return _filter_stats(_merge_stats_close(regex_stats))
 
 
-CUSTOM_VISUAL_HOLD_FRAMES = 90
+CUSTOM_VISUAL_HOLD_FRAMES = 120
 
 
 def _custom_visual_shots(script: dict, transcript: dict) -> tuple[list[dict], list[tuple[int, int]]]:
@@ -490,6 +493,8 @@ def _custom_visual_shots(script: dict, transcript: dict) -> tuple[list[dict], li
                 "description": override.get("description", ""),
                 "asset_status": asset_status,
                 "asset_path": asset_path,
+                "asset_filename": override.get("asset_filename", ""),
+                "layout": override.get("layout", "hero"),
                 "source": "custom_visual_overrides",
             },
         })

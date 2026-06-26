@@ -1,0 +1,20 @@
+{
+  "project_id": "script_02_stop_learning_tools_from",
+  "script_number": 2,
+  "title": "STOP LEARNING TOOLS FROM SCRATCH",
+  "status": "rendered",
+  "raw_filename_original": "script_02_stor_learning_tools_from.mp4",
+  "matched_script_id": "script_02_stop_learning_tools_from",
+  "created_at": "2026-06-17T20:30:12+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_stop_learning_tools_from/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_stop_learning_tools_from/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_stop_learning_tools_from/assets"
+  },
+  "updated_at": "2026-06-17T20:30:12+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-17T20:32:09+00:00",
+  "render_minutes": 1.5,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0
+}

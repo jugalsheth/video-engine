@@ -8,7 +8,8 @@ import {
 } from 'remotion';
 import {BRAND, CAPTION_VIRAL, FONT, SAFE, SPRING_DEFAULT, SPRING_SNAP} from '../layout';
 import {FONT_BODY} from '../fonts';
-import type {StepBeat, Transcript, WordTimestamp} from '../types';
+import type {BrollMoment, StepBeat, Transcript, WordTimestamp} from '../types';
+import {captionPlacement} from '../utils/layoutZones';
 
 const ENERGY_WORDS = ['right', 'unless', 'listen', "that's", 'wait', 'but', 'now'];
 const MAX_WORDS_CLASSIC = 5;
@@ -24,6 +25,7 @@ type Props = {
   wordHighlightFrames?: Set<number>;
   stepBeats?: StepBeat[];
   energyWords?: string[];
+  brollMoments?: BrollMoment[];
 };
 
 const STEP_CHAPTER_WINDOW = 45;
@@ -63,6 +65,7 @@ export const CaptionLayer: React.FC<Props> = ({
   wordHighlightFrames,
   stepBeats = [],
   energyWords = [],
+  brollMoments = [],
 }) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -70,9 +73,12 @@ export const CaptionLayer: React.FC<Props> = ({
   const inStepChapter = stepBeats.some(
     (b) => frame >= b.frame - STEP_CHAPTER_WINDOW && frame <= b.frame + STEP_CHAPTER_WINDOW,
   );
-  const effectiveCaptionPosition = inStepChapter
-    ? captionVerticalPosition + STEP_CAPTION_SHIFT
-    : captionVerticalPosition;
+  const {paddingTopPercent: effectiveCaptionPosition} = captionPlacement(
+    frame,
+    brollMoments,
+    captionVerticalPosition,
+    inStepChapter,
+  );
   const words = transcript.words;
   const isViral = captionStyle === 'viral';
   const maxWords = isViral ? MAX_WORDS_VIRAL : MAX_WORDS_CLASSIC;

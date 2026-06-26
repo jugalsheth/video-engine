@@ -1,0 +1,20 @@
+{
+  "project_id": "script_02_when_your_pipeline_fails",
+  "script_number": 2,
+  "title": "WHEN YOUR PIPELINE FAILS",
+  "status": "rendered",
+  "raw_filename_original": "raw.mp4",
+  "matched_script_id": "script_02_when_your_pipeline_fails",
+  "created_at": "2026-06-15T00:43:39+00:00",
+  "paths": {
+    "raw": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_when_your_pipeline_fails/raw.mp4",
+    "final": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_when_your_pipeline_fails/final.mp4",
+    "assets": "/Users/jugalsheth/Desktop/CretorAuto/video-engine/projects/script_02_when_your_pipeline_fails/assets"
+  },
+  "updated_at": "2026-06-15T00:19:27+00:00",
+  "custom_visual_overrides": [],
+  "rendered_at": "2026-06-15T00:46:15+00:00",
+  "render_minutes": 2.1,
+  "custom_assets_found": [],
+  "custom_assets_needed": 0
+}

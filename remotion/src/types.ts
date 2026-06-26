@@ -14,8 +14,19 @@ export type Transcript = {
   fps: number;
 };
 
+export type ShotType =
+  | 'TITLE_CARD'
+  | 'CAPTION_HIGHLIGHT'
+  | 'STAT_CALLOUT'
+  | 'CUSTOM_VISUAL'
+  | 'ZOOM_HOOK'
+  | 'ZOOM_CLOSER'
+  | 'WORD_HIGHLIGHT'
+  | 'BROLL_OVERLAY'
+  | 'STEP_REVEAL';
+
 export type Shot = {
-  type: string;
+  type: ShotType | string;
   start_frame: number;
   end_frame: number;
   params: Record<string, unknown>;
@@ -60,9 +71,16 @@ export type BrollMoment = {
   keyword: string;
   word: string;
   clip_file?: string;
+  image_file?: string;
   source?: string;
   search_query?: string;
-  layout?: 'pip' | 'greenscreen';
+  layout?:
+    | 'pip'
+    | 'greenscreen'
+    | 'presenter_on_bg'
+    | 'presenter_cutout'
+    | 'immersive_flash';
+  cutout_file?: string;
   side?: 'left' | 'right';
   step_paired?: number;
 };
@@ -185,6 +203,21 @@ export type GlobalFxData = {
   summary?: {detected: number; skipped: number; types: string[]};
 };
 
+export type SocialMoment = {
+  type: 'tweet' | 'headline' | 'chat' | 'reaction';
+  start_frame: number;
+  end_frame: number;
+  at_phrase?: string;
+  source?: string;
+  props?: Record<string, unknown>;
+};
+
+export type SocialData = {
+  moments: SocialMoment[];
+  skipped?: Array<Record<string, unknown> & {reason?: string}>;
+  summary: {detected: number; skipped: number; types: string[]};
+};
+
 export type VideoProps = {
   titleVerticalPosition: number;
   captionVerticalPosition: number;
@@ -208,4 +241,5 @@ export type VideoProps = {
   stepBeats: StepBeatData;
   videoBeats: VideoBeats;
   globalFxMoments: GlobalFxData;
+  socialMoments: SocialData;
 };

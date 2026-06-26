@@ -29,7 +29,7 @@ export const FONT = {
 };
 
 export const CAPTION_VIRAL = {
-  maxWords: 2,
+  maxWords: 3,
   fontSize: 52,
   activeScale: 1.28,
   highlight: '#C9923A',
@@ -83,3 +83,9 @@ export const MEDIA_CONTAIN_CENTER = {
 
 /** A-roll focal point when top greenscreen panel is active (face in lower strip) */
 export const AROLL_GREENSCREEN_POSITION = 'center 28%';
+
+/** Composited presenter strip — face centered in bottom band */
+export const AROLL_COMPOSITED_POSITION = '50% 42%';
+
+/** Shared face focal constants */
+export const PRESENTER_STRIP_SCALE = 0.92;

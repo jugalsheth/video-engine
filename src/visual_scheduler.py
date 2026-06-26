@@ -22,6 +22,10 @@ def _event_frames(
     shot_list: dict,
     fun_result: dict,
     broll_result: dict,
+    logo_result: dict | None = None,
+    role_result: dict | None = None,
+    social_result: dict | None = None,
+    global_fx_result: dict | None = None,
 ) -> list[int]:
     frames: set[int] = {0}
     for shot in shot_list.get("shots", []):
@@ -31,6 +35,11 @@ def _event_frames(
         frames.add(m["start_frame"])
     for m in broll_result.get("moments", []):
         frames.add(m["start_frame"])
+    for result in (logo_result, role_result, social_result, global_fx_result):
+        if not result:
+            continue
+        for m in result.get("moments", []):
+            frames.add(m["start_frame"])
     return sorted(frames)
 
 
@@ -77,6 +86,11 @@ def fill_fun_gaps(
     fun_result: dict,
     broll_result: dict,
     template: dict,
+    *,
+    logo_result: dict | None = None,
+    role_result: dict | None = None,
+    social_result: dict | None = None,
+    global_fx_result: dict | None = None,
 ) -> dict:
     """Inject rhythm fun moments into gaps > 4s."""
     words = transcript.get("words", [])
@@ -84,7 +98,15 @@ def fill_fun_gaps(
     full_text = transcript.get("full_text", "")
     max_gap = int(template.get("visual_change_max_gap_s", 4) * transcript.get("fps", 30))
 
-    events = _event_frames(shot_list, fun_result, broll_result)
+    events = _event_frames(
+        shot_list,
+        fun_result,
+        broll_result,
+        logo_result,
+        role_result,
+        social_result,
+        global_fx_result,
+    )
     gaps = [(a, b) for a, b in _find_gaps(events, total) if b - a >= max_gap]
 
     existing = list(fun_result.get("moments", []))
