@@ -10,6 +10,8 @@ from pathlib import Path
 
 from src import beat_detector, broll_detector, composite_assets, fetch_broll, fetch_music, fun_detector, global_fx_detector, logo_detector, lottie_assets, role_caster, social_detector, step_beat_detector
 from src import ai_image_gen
+from src import visual_provider
+from src import hero_inject
 from src.ai_cost_budget import AICostBudget
 from src.render_props import resolve_render_props
 from src.template_loader import resolve_template
@@ -237,6 +239,29 @@ def prepare(
         project_id=project_id,
         regenerate=regenerate_ai,
     )
+    hook_visual_summary = visual_provider.resolve_hook_visual(
+        script,
+        project_dir=project_assets_dir.parent if project_assets_dir else None,
+        output_dir=OUT_DIR,
+        budget=ai_budget,
+        project_id=project_id or "",
+    )
+    if hook_visual_summary.get("path"):
+        print(
+            f"   Hook visual: {hook_visual_summary.get('tier')} → {hook_visual_summary.get('path')}"
+        )
+        fps = float(transcript.get("fps") or 30)
+        inject_summary = hero_inject.inject_hero_moment(
+            broll_result,
+            hook_visual_summary,
+            script,
+            fps=fps,
+        )
+        if inject_summary.get("injected"):
+            print(
+                f"   Hero injected as immersive_flash "
+                f"({inject_summary.get('reason')}, deferred={inject_summary.get('deferred', 0)})"
+            )
     write_prompt_manifest(
         broll_result,
         script,
@@ -248,7 +273,7 @@ def prepare(
             script,
             ENGINE_ROOT / "projects" / project_id / "ai_prompt_manifest.json",
         )
-    cutout_summary = composite_assets.fill_cutouts(broll_result, dest_video, transcript)
+    cutout_summary = composite_assets.fill_cutouts(broll_result, dest_video, transcript, OUT_DIR)
 
     project_config = load_project_config(project_id) if project_id else {}
 
@@ -274,7 +299,8 @@ def prepare(
     ai_cost_usd = round(
         float(ai_broll_summary.get("cost_usd", 0))
         + float(ai_custom_summary.get("cost_usd", 0))
-        + float(cutout_summary.get("cost_usd", 0)),
+        + float(cutout_summary.get("cost_usd", 0))
+        + float(hook_visual_summary.get("cost_usd", 0)),
         4,
     )
     ceiling = ai_cost_ceiling_usd()
@@ -352,9 +378,23 @@ def prepare(
         "global_fx_types": global_fx_result["summary"]["types"],
         "social_detected": social_result["summary"]["detected"],
         "social_types": social_result["summary"]["types"],
-        "ai_images_generated": ai_broll_summary.get("generated", 0) + ai_custom_summary.get("generated", 0),
-        "ai_images_cached": ai_broll_summary.get("cached", 0) + ai_custom_summary.get("cached", 0),
-        "ai_images_failed": ai_broll_summary.get("failed", 0) + ai_custom_summary.get("failed", 0),
+        "ai_images_generated": (
+            ai_broll_summary.get("generated", 0)
+            + ai_custom_summary.get("generated", 0)
+            + hook_visual_summary.get("generated", 0)
+        ),
+        "ai_images_cached": (
+            ai_broll_summary.get("cached", 0)
+            + ai_custom_summary.get("cached", 0)
+            + hook_visual_summary.get("cached", 0)
+        ),
+        "ai_images_failed": (
+            ai_broll_summary.get("failed", 0)
+            + ai_custom_summary.get("failed", 0)
+            + hook_visual_summary.get("failed", 0)
+        ),
+        "hook_visual_tier": hook_visual_summary.get("tier"),
+        "hook_visual_path": hook_visual_summary.get("path"),
         "ai_cutouts_generated": cutout_summary.get("generated", 0),
         "ai_cutouts_cached": cutout_summary.get("cached", 0),
         "ai_cutouts_failed": cutout_summary.get("failed", 0),

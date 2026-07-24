@@ -40,11 +40,13 @@ def fill_cutouts(
     broll_result: dict,
     video_path: Path,
     transcript: dict,
+    output_dir: Path | None = None,
 ) -> dict:
     """
     Generate presenter cutouts for moments with layout=presenter_cutout.
     Falls back to presenter_on_bg when cutout budget is exhausted or API fails.
     """
+    base_dir = output_dir or PUBLIC_DIR
     summary = {
         "generated": 0,
         "cached": 0,
@@ -60,6 +62,9 @@ def fill_cutouts(
     budget = ai_cutout_max_per_video()
     model = ai_cutout_model()
     used = 0
+    frames_dir = base_dir / "ai_images" / "frames"
+    cutouts_dir = base_dir / "ai_images" / "cutouts"
+    cutouts_dir.mkdir(parents=True, exist_ok=True)
 
     for moment in broll_result.get("moments", []):
         if moment.get("layout") != "presenter_cutout":
@@ -70,7 +75,7 @@ def fill_cutouts(
             continue
 
         frame = int(moment.get("start_frame", 0))
-        frame_path = FRAMES_DIR / f"frame_{frame}.png"
+        frame_path = frames_dir / f"frame_{frame}.png"
         if not frame_path.exists():
             if not extract_keyframe(video_path, frame, fps, frame_path):
                 moment["layout"] = "presenter_on_bg"
@@ -78,7 +83,7 @@ def fill_cutouts(
                 continue
 
         rel = f"ai_images/cutouts/cutout_{frame}.png"
-        dest = PUBLIC_DIR / rel
+        dest = cutouts_dir / f"cutout_{frame}.png"
         path, meta = fal_client.remove_background(frame_path, dest=dest, model=model)
         used += 1
 

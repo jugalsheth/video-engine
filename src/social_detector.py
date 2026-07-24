@@ -123,7 +123,7 @@ def detect(
             continue
         if vm_type in seen_types and vm_type in {"tweet", "headline"}:
             continue
-        start = frame_for_phrase(words, full_text, phrase)
+        start, _method = resolve_phrase_frame(words, full_text, phrase)
         if start is None:
             skipped.append({**vm, "reason": "frame not found"})
             continue
